@@ -1,3 +1,8 @@
+# Berkas sementara saat pengembangan
+_tmp-*
+_check.html
+*.tmp
+
 # Dependencies
 node_modules/
 jspm_packages/
@@ -30,8 +35,3 @@ Desktop.ini
 .idea/
 .vscode/
 *.swp
-
-# Berkas sementara saat pengembangan
-_tmp-*
-_check.html
-*.tmp
