@@ -861,10 +861,12 @@
 
   /** Terapkan data pengguna yang masuk ke seluruh bagian aplikasi. */
   function applyUserToProfile(user) {
-    // Nama pada kartu profil
-    $$('#view-profile .avatar').forEach(el => {
-      el.textContent = initials(user.name);
-    });
+    // Inisial pada avatar kartu profil.
+    // Selector harus spesifik: memakai .avatar akan ikut menangkap
+    // avatar instruktur pada kartu kelas Jadwal.
+    const avatarEl = $('#profileAvatar');
+    if (avatarEl) avatarEl.textContent = initials(user.name);
+
     const nameEl = $('#profileName');
     if (nameEl) nameEl.textContent = user.name;
 
