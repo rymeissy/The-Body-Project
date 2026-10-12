@@ -16,8 +16,8 @@
     name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
   const dayLabel = key => {
-    const d = DAYS.find(x => x.key === key);
-    return d ? `${d.day}, ${d.date} Okt 2026` : key;
+    const d = toDate(key);
+    return `${HARI_MINGGU[d.getDay()]}, ${d.getDate()} ${NAMA_BULAN[d.getMonth()]} ${d.getFullYear()}`;
   };
 
   /* ---------- State ---------- */
@@ -96,9 +96,13 @@
   }
 
   function renderCalendar() {
-    $('#calRow').innerHTML = DAYS.map(d => {
+    // Strip selalu dimulai dari tanggal terpilih agar tanggal itu terlihat
+    const days = stripDays(state.day);
+
+    $('#calRow').innerHTML = days.map(d => {
       const slots = slotsOn(d.key);
       const selected = d.key === state.day;
+      const bisa = isSelectable(d.key);
       const dot = slots > 0
         ? `<span class="cal-day__dot${selected ? ' is-selected' : ''}"
                 title="${slots} slot tersedia"></span>`
@@ -106,7 +110,8 @@
 
       return `
         <button class="cal-day" type="button" data-day="${d.key}"
-                aria-pressed="${selected}">
+                aria-pressed="${selected}"
+                ${bisa ? '' : 'disabled aria-disabled="true"'}>
           <span class="cal-day__name">${d.day}</span>
           <span class="cal-day__num">${d.date}</span>
           ${dot}
@@ -115,6 +120,7 @@
 
     $$('#calRow .cal-day').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.disabled) return;
         state.day = btn.dataset.day;
         renderCalendar();
         renderClasses();
@@ -171,7 +177,12 @@
   });
 
   /* ---------- Date picker (kalender bulanan) ---------- */
-  const pad = n => String(n).padStart(2, '0');
+
+  /** "2026-10-13" → "13 Oktober 2026" */
+  function formatTanggalPanjang(key) {
+    const d = toDate(key);
+    return `${d.getDate()} ${NAMA_BULAN[d.getMonth()]} ${d.getFullYear()}`;
+  }
 
   /** Kunci tanggal "YYYY-MM-DD" dengan offset bulan. */
   function shiftMonth(year, monthIdx, delta) {
@@ -180,11 +191,6 @@
   }
 
   /** Kunci sel yang sedang ditinjau pada date picker. */
-  function pickerKeyOf(year, monthIdx) {
-    const same = year === CAL_RANGE.year && monthIdx === CAL_RANGE.month - 1;
-    return same ? state.pickerMonth : `${year}-${pad(monthIdx + 1)}`;
-  }
-
   function openCalendar() {
     // Mulai dari bulan berisi tanggal yang sedang dipilih
     const cur = new Date(state.day + 'T00:00:00');
@@ -211,10 +217,6 @@
     const offset = new Date(y, m, 1).getDay();
     const totalHari = new Date(y, m + 1, 0).getDate();
 
-    const dalamRentang = y === CAL_RANGE.year && m === CAL_RANGE.month - 1;
-    const hariAwal = dalamRentang ? CAL_RANGE.first : 1;
-    const hariAkhir = dalamRentang ? CAL_RANGE.last : totalHari;
-
     let cells = HARI_MINGGU.map(h =>
       `<span class="dp__dow" aria-hidden="true">${h}</span>`).join('');
 
@@ -222,7 +224,7 @@
 
     for (let d = 1; d <= totalHari; d++) {
       const key = `${y}-${pad(m + 1)}-${pad(d)}`;
-      const aktif = d >= hariAwal && d <= hariAkhir;
+      const aktif = isSelectable(key);
       const dipilih = key === state.day;
       const slots = aktif ? slotsOn(key) : 0;
       const kelasAda = CLASSES.some(k => k.day === key);
@@ -231,12 +233,14 @@
         'dp__cell',
         !aktif ? 'is-off' : '',
         dipilih ? 'is-selected' : '',
+        aktif && key === CAL_TODAY ? 'is-today' : '',
         aktif && slots > 0 ? 'has-slots' : '',
         aktif && kelasAda && slots === 0 ? 'is-waitlist' : ''
       ].filter(Boolean).join(' ');
 
-      const label = `${d} ${NAMA_BULAN[m]} ${y}` +
-        (aktif ? `, ${slots} slot tersedia` : ', di luar rentang');
+      const label = aktif
+        ? `${d} ${NAMA_BULAN[m]} ${y}, ${slots} slot tersedia`
+        : `${d} ${NAMA_BULAN[m]} ${y}, ${key < CAL_MIN ? 'sudah lewat' : 'di luar batas pemesanan'}`;
 
       cells += `<button class="${cls}" type="button" data-pick="${key}"
                        ${aktif ? '' : 'disabled aria-disabled="true"'}
@@ -259,8 +263,9 @@
         <p class="dp__legend">
           <span><i class="dp__key has-slots"></i>ada slot kosong</span>
           <span><i class="dp__key is-waitlist"></i>penuh / waitlist</span>
-          <span><i class="dp__key is-off"></i>di luar rentang</span>
+          <span><i class="dp__key is-off"></i>sudah lewat</span>
         </p>
+        <p class="dp__hint">Pemesanan dibuka hingga ${formatTanggalPanjang(CAL_MAX)}.</p>
       </div>`;
 
     $('#sheetFoot').innerHTML = `
@@ -276,6 +281,19 @@
         renderCalendarSheet();
       });
     });
+
+    // Sembunyikan tombol navigasi bila tidak ada tanggal yang bisa dipilih
+    const bulanAdaIsian = (yy, mm) => {
+      const akhir = new Date(yy, mm + 1, 0).getDate();
+      for (let d = 1; d <= akhir; d++) {
+        if (isSelectable(`${yy}-${pad(mm + 1)}-${pad(d)}`)) return true;
+      }
+      return false;
+    };
+    const navMundur = $('[data-nav="-1"]');
+    const navMaju   = $('[data-nav="1"]');
+    navMundur.hidden = !bulanAdaIsian(y, m - 1);
+    navMaju.hidden   = !bulanAdaIsian(y, m + 1);
 
     $$('[data-pick]', $('#sheetBody')).forEach(btn => {
       btn.addEventListener('click', () => {

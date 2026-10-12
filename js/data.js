@@ -30,9 +30,16 @@ const INSTRUCTORS = [
   { id: 'malik',  name: 'Malik Hidayat' }
 ];
 
-/* Rentang kalender yang boleh dipilih pada date picker.
-   Bulan di luar rentang ini tidak dapat diklik. */
-const CAL_RANGE = { year: 2026, month: 10, first: 12, last: 18 };
+/* ==========================================================================
+   Kalender & date picker
+
+   Tanggal lampau tidak dapat dipilih (kelas sudah lewat), tetapi tanggal
+   masa depan tetap bisa — pelanggan mem-booking jauh sebelum hari jadwal.
+   DATA_MIN dipakai sebagai "hari ini" pada prototype; pada implementasi
+   nyata nilai ini diambil dari tanggal sistem.
+   ========================================================================== */
+const DATA_MIN = '2026-10-12';
+const HORIZON_HARI = 90;          // berapa hari ke depan boleh di-booking
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -41,19 +48,51 @@ const NAMA_BULAN = [
 
 const HARI_MINGGU = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-/* Deret 7 hari ringkas untuk strip kalender di halaman Jadwal */
-const DAYS = (() => {
+const pad = n => String(n).padStart(2, '0');
+
+/** Ubah "YYYY-MM-DD" menjadi objek Date waktu lokal. */
+const toDate = key => {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/** Ubah objek Date menjadi "YYYY-MM-DD". */
+const toKey = dt => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+
+const CAL_MAX = (() => {
+  const d = toDate(DATA_MIN);
+  d.setDate(d.getDate() + HORIZON_HARI);
+  return toKey(d);
+})();
+
+const CAL_MIN = DATA_MIN;
+const CAL_TODAY = DATA_MIN;   // "hari ini" pada prototype
+
+/** True bila tanggal boleh dipilih (tidak lampau, masih dalam horizon). */
+function isSelectable(key) {
+  return key >= CAL_MIN && key <= CAL_MAX;
+}
+
+/**
+ * Deret 7 hari untuk strip kalender di halaman Jadwal.
+ * Selalu dimulai dari tanggal yang sedang dipilih agar tanggal itu
+ * tetap terlihat setelah dipilih lewat date picker.
+ */
+function stripDays(fromKey) {
+  const start = toDate(fromKey || CAL_TODAY);
   const out = [];
-  for (let d = CAL_RANGE.first; d <= CAL_RANGE.last; d++) {
-    const dt = new Date(CAL_RANGE.year, CAL_RANGE.month - 1, d);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
     out.push({
-      key: `${CAL_RANGE.year}-${String(CAL_RANGE.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
-      day: HARI_MINGGU[dt.getDay()],
-      date: String(d)
+      key: toKey(d),
+      day: HARI_MINGGU[d.getDay()],
+      date: String(d.getDate()),
+      month: NAMA_BULAN[d.getMonth()]
     });
   }
   return out;
-})();
+}
 
 const CLASSES = [
   {
@@ -278,6 +317,79 @@ const CLASSES = [
     usesPackage: true
   }
 ];
+
+/* Jadwal berulang untukPekan-pekan berikutnya, supaya tanggal masa depan
+   tidak kosong. Pola studio pada umumnya berulang tiap minggu. */
+const JADWAL_MINGGUAN = [
+  { hari: 1, start: '08:00', end: '08:50', name: 'Reformer Sculpt & Core',
+    type: 'reformer', level: 'Beginner/Intermediate', instructor: 'Sarah Adistya',
+    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+  { hari: 2, start: '10:00', end: '10:50', name: 'Cadillac Posture Alignment',
+    type: 'cadillac', level: 'Intermediate', instructor: 'Nadia Prasetyo',
+    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
+    capacity: 4, usesPackage: false },
+  { hari: 2, start: '16:30', end: '17:20', name: 'Core & Fluid Flow',
+    type: 'mat', level: 'All Levels', instructor: 'Karin Utami',
+    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
+    capacity: 8, usesPackage: true },
+  { hari: 3, start: '18:00', end: '18:50', name: 'Reformer Power Flow',
+    type: 'reformer', level: 'Intermediate', instructor: 'Malik Hidayat',
+    branch: 'PIK Avenue', branchId: 'pik', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+  { hari: 4, start: '07:30', end: '08:20', name: 'Reformer Morning Flow',
+    type: 'reformer', level: 'All Levels', instructor: 'Sarah Adistya',
+    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+  { hari: 5, start: '17:30', end: '18:20', name: 'Cadillac Full Body',
+    type: 'cadillac', level: 'Advanced', instructor: 'Karin Utami',
+    branch: 'Menteng', branchId: 'menteng', studio: 'Studio B',
+    capacity: 4, usesPackage: false },
+  { hari: 6, start: '08:30', end: '09:20', name: 'Weekend Reformer Reset',
+    type: 'reformer', level: 'All Levels', instructor: 'Gaga Permana',
+    branch: 'TB Simatupang', branchId: 'simatupang', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+  { hari: 0, start: '09:00', end: '09:50', name: 'Sunday Mat Reset',
+    type: 'mat', level: 'All Levels', instructor: 'Wahyu Nugroho',
+    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
+    capacity: 10, usesPackage: true }
+];
+
+/* Bangun kelas untuk tanggal masa depan dari JADWAL_MINGGUAN.
+   Kapasitas terisi dibuat bergilir agar tampak seperti data nyata. */
+(function seedFutureClasses() {
+  let n = 0;
+  const mulai = toDate(CAL_TODAY);
+
+  for (let offset = 0; offset <= HORIZON_HARI; offset++) {
+    const d = new Date(mulai);
+    d.setDate(d.getDate() + offset);
+    const key = toKey(d);
+
+    JADWAL_MINGGUAN
+      .filter(p => p.hari === d.getDay())
+      .forEach(p => {
+        n++;
+        // Pola Pseudo-random yang stabil supaya tampilan tidak berubah tiap muat
+        const seed = (n * 37 + offset * 11) % 100;
+        const taken = Math.min(p.capacity, Math.floor((seed / 100) * (p.capacity + 1)));
+        const waitlist = taken === p.capacity && seed % 3 === 0 ? 1 : 0;
+
+        CLASSES.push({
+          id: 'f' + n,
+          day: key,
+          start: p.start, end: p.end,
+          name: p.name,
+          type: p.type,
+          level: p.level,
+          instructor: p.instructor,
+          branch: p.branch, branchId: p.branchId, studio: p.studio,
+          capacity: p.capacity, taken, waitlist,
+          usesPackage: p.usesPackage
+        });
+      });
+  }
+})();
 
 const PACKAGES = [
   {

@@ -175,18 +175,32 @@ Lima tab di bawah: **Jadwal · Cabang · Paket · Riwayat · Profil**
 
 Tautan "Lihat Kalender" membuka bottom sheet berisi kalender bulan penuh.
 
+**Tanggal lampau tidak bisa dipilih, tanggal masa depan bisa** — pelanggan
+mem-booking jauh sebelum hari jadwal. Batasnya 90 hari ke depan
+(`HORIZON_HARI` di `data.js`), dan sheet menampilkan batas tersebut di
+bawah legenda.
+
 | Elemen | Perilaku |
 |---|---|
-| Navigasi ‹ › | Pindah bulan; tanggal terpilih tetap ditandai |
-| Hari di luar rentang | Nonaktif (`disabled`), tampil redup |
-| Warna sel | Hijau muda = ada slot · krem = penuh/waitlist · abu-abu = di luar rentang |
-| Legenda | Menjelaskan ketiga warna di bawah grid |
-| Menutup | Tombol Batal, backdrop, atau tekan `Esc` |
+| Navigasi ‹ › | Pindah bulan; disembunyikan bila bulan itu tidak ada tanggal yang bisa dipilih |
+| Tanggal lampau | Nonaktif (`disabled`), tampil redup, `aria-label` berbunyi "sudah lewat" |
+| Tanggal masa depan | Aktif sampai `HORIZON_HARI` ke depan |
+| Warna sel | Hijau muda = ada slot · krem = penuh/waitlist · abu-abu = sudah lewat |
+| Garis bawah | Menandai hari ini |
+| Legenda | Menjelaskan ketiga warna |
 
-Setiap sel punya `aria-label` yang menyebut tanggal dan jumlah slot, misalnya
-*"13 Oktober 2026, 25 slot tersedia"*. Hanya hari dalam rentang
-(`CAL_RANGE` di `data.js`) yang bisa dipilih — saat ini 12–18 Oktober 2026,
-sesuai data kelas.
+Setiap sel punya `aria-label` berisi tanggal dan jumlah slot, misalnya
+*"13 Oktober 2026, 25 slot tersedia"*.
+
+Deret 7 hari di bawah strip tidak lagi tombol mati: saat tanggal dipilih
+melalui date picker, strip ikut bergeser ke minggu tersebut supaya tanggal
+terpilih tetap terlihat.
+
+**Data kelas untuk minggu-minggu berikutnya** dibangkitkan dari
+`JADWAL_MINGGUAN` melalui `seedFutureClasses()`, memakai pola tetap
+(seed berbasis indeks) supaya isi tampilan tidak berubah tiap kali halaman
+dimuat ulang. Pada implementasi nyata, bagian ini diganti dengan data dari
+server.
 - *Filter tipe* — Semua Kelas · Reformer · Mat Flow · Cadillac · Prenatal
 - *Kartu kelas* — jam + durasi terhitung ("50 Menit • Reformer Studio A"),
   pil "⊕ Sisa 2 dari 6 slot", judul besar, tag level + "Dapat kuota paket",

@@ -1189,12 +1189,22 @@ a { color: var(--green-700); }
   background: var(--cream-200);
 }
 
+/* Tanggal lampau: tidak bisa dipilih */
 .dp__cell.is-off {
   color: var(--ink-400);
-  opacity: .4;
+  opacity: .38;
   cursor: not-allowed;
+  background: var(--cream-100);
 }
-.dp__cell.is-off:hover { background: none; }
+.dp__cell.is-off:hover { background: var(--cream-100); }
+
+/* Hari ini: ditandai garis bawah agar mudah dibedakan */
+.dp__cell.is-today .dp__num {
+  box-shadow: inset 0 -2px 0 var(--green-600);
+}
+.dp__cell.is-selected.is-today .dp__num {
+  box-shadow: inset 0 -2px 0 var(--green-200);
+}
 
 .dp__cell.is-selected {
   color: var(--cream-50);
@@ -1235,6 +1245,18 @@ a { color: var(--green-700); }
 .dp__key.has-slots { background: var(--green-50); border-color: var(--green-200); }
 .dp__key.is-waitlist { background: var(--cream-200); }
 .dp__key.is-off { background: var(--cream-100); opacity: .5; }
+
+.dp__hint {
+  font-size: 10px;
+  color: var(--ink-400);
+  line-height: 1.5;
+}
+
+/* Strip hari: hari yang lampau tampil redup */
+.cal-day:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
 
 /* ---------- 10. Panel ---------- */
 .panel {
