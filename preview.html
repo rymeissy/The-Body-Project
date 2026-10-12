@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responsive Preview — The Body Project Prototype</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 20px 60px;
+      font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #1C2620;
+      background: #E3DACA;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+      font-family: Georgia, serif;
+    }
+    .lead { margin: 0 0 26px; font-size: 13px; color: #5A665F; }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    @media (min-width: 1180px) { .grid { grid-template-columns: 390px 1fr; } }
+
+    .device { display: grid; gap: 10px; justify-items: start; }
+    .device--wide { margin-top: 24px; }
+    .device__label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #26513F;
+    }
+    .device__label b {
+      padding: 3px 9px;
+      background: #26513F;
+      color: #F5F1E9;
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: .06em;
+    }
+    .device__note { font-size: 11px; color: #5A665F; margin: -4px 0 2px; }
+
+    .frame {
+      border: 0;
+      background: #FBF9F5;
+      border-radius: 20px;
+      box-shadow: 0 12px 32px rgba(31, 61, 49, .2);
+      display: block;
+    }
+    .w-mobile  { width: 390px; height: 720px; }
+    .w-tablet  { width: 820px; height: 620px; }
+    .w-desktop { width: 1366px; height: 700px; }
+
+    /* Desktop dirender pada lebar penuh 1280px; bila jendela browser lebih
+       sempit, area ini digulir horizontal agar breakpoint tetap terpicu. */
+    .device--wide {
+      max-width: 100%;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .stack { display: grid; gap: 24px; }
+  </style>
+</head>
+<body>
+  <h1>Responsive Preview</h1>
+  <p class="lead">
+    Halaman ini memuat prototype yang sama pada tiga lebar viewport untuk memeriksa
+    perilaku <em>responsive web design</em>-nya.
+  </p>
+
+  <div class="grid">
+    <!-- Mobile -->
+    <div class="device">
+      <span class="device__label"><b>Mobile</b> 390 px</span>
+      <span class="device__note">Bottom tab bar · 1 kolom · bottom sheet</span>
+      <iframe class="frame w-mobile" src="index.html?demo=1" title="Tampilan mobile 390px"
+              loading="lazy"></iframe>
+    </div>
+
+    <!-- Tablet + Desktop -->
+    <div class="stack">
+      <div class="device">
+        <span class="device__label"><b>Tablet</b> 820 px</span>
+        <span class="device__note">Nav horizontal sticky · 2 kolom · sheet jadi modal</span>
+        <iframe class="frame w-tablet" src="index.html?demo=1" title="Tampilan tablet 820px"
+                loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop — lebar penuh agar melewati breakpoint 1024px -->
+  <div class="device device--wide">
+    <span class="device__label"><b>Desktop</b> 1366 px</span>
+    <span class="device__note">Sidebar kiri · 3 kolom kartu kelas · 4 kolom pembayaran</span>
+    <iframe class="frame w-desktop" src="index.html?demo=1" title="Tampilan desktop 1366px"
+            loading="lazy"></iframe>
+  </div>
+</body>
+</html>
