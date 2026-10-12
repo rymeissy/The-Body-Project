@@ -1120,6 +1120,122 @@ a { color: var(--green-700); }
 .btn-map:hover { background: var(--green-100); }
 .btn-map:active { transform: scale(.94); }
 
+/* ---------- 9d. Date picker ---------- */
+.dp { display: grid; gap: 12px; }
+
+.dp__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dp__month {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+.dp__navbtn {
+  width: 34px; height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--green-800);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  transition: background .16s ease;
+}
+.dp__navbtn:hover { background: var(--green-50); }
+
+.dp__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(38px, auto);
+  gap: 4px;
+}
+
+.dp__dow {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-400);
+}
+
+.dp__cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  background: var(--white);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: background .14s ease, color .14s ease;
+}
+.dp__cell.is-blank { background: none; }
+.dp__cell:not(.is-blank):hover { background: var(--green-50); }
+
+/* Hari tanpa kelas: redupkan supaya mudah dibedakan */
+.dp__cell.has-slots {
+  color: var(--green-800);
+  background: var(--green-50);
+}
+.dp__cell.is-waitlist {
+  color: var(--ink-400);
+  background: var(--cream-200);
+}
+
+.dp__cell.is-off {
+  color: var(--ink-400);
+  opacity: .4;
+  cursor: not-allowed;
+}
+.dp__cell.is-off:hover { background: none; }
+
+.dp__cell.is-selected {
+  color: var(--cream-50);
+  background: var(--green-800);
+  border-color: var(--green-800);
+}
+.dp__cell.is-selected:hover { background: var(--green-700); }
+.dp__cell.is-selected.is-waitlist { color: var(--cream-50); }
+
+.dp__dot {
+  position: absolute;
+  bottom: 5px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--green-600);
+}
+.dp__cell.is-selected .dp__dot { background: var(--green-200); }
+
+.dp__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.dp__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--ink-400);
+}
+.dp__key {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+.dp__key.has-slots { background: var(--green-50); border-color: var(--green-200); }
+.dp__key.is-waitlist { background: var(--cream-200); }
+.dp__key.is-off { background: var(--cream-100); opacity: .5; }
+
 /* ---------- 10. Panel ---------- */
 .panel {
   background: var(--white);

@@ -29,6 +29,10 @@
     instructor: 'all',
     search: '',
 
+    // Bulan yang ditinjau pada date picker
+    pickerYear: 2026,
+    pickerMonth: 9,
+
     // Alur pemesanan
     step: 1,
     klass: null,
@@ -166,7 +170,130 @@
     toast('Cabang diubah ke ' + next.name);
   });
 
-  $('#calLink').addEventListener('click', () => toast('Kalender penuh segera hadir'));
+  /* ---------- Date picker (kalender bulanan) ---------- */
+  const pad = n => String(n).padStart(2, '0');
+
+  /** Kunci tanggal "YYYY-MM-DD" dengan offset bulan. */
+  function shiftMonth(year, monthIdx, delta) {
+    const d = new Date(year, monthIdx + delta, 1);
+    return { year: d.getFullYear(), monthIdx: d.getMonth() };
+  }
+
+  /** Kunci sel yang sedang ditinjau pada date picker. */
+  function pickerKeyOf(year, monthIdx) {
+    const same = year === CAL_RANGE.year && monthIdx === CAL_RANGE.month - 1;
+    return same ? state.pickerMonth : `${year}-${pad(monthIdx + 1)}`;
+  }
+
+  function openCalendar() {
+    // Mulai dari bulan berisi tanggal yang sedang dipilih
+    const cur = new Date(state.day + 'T00:00:00');
+    state.pickerYear = cur.getFullYear();
+    state.pickerMonth = cur.getMonth();
+
+    sheet.hidden = false;
+    requestAnimationFrame(() => {
+      backdrop.classList.add('is-open');
+      sheet.classList.add('is-open');
+    });
+    renderCalendarSheet();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function renderCalendarSheet() {
+    const y = state.pickerYear;
+    const m = state.pickerMonth;
+
+    $('#sheetTitle').textContent = 'Pilih Tanggal';
+    $('#sheetSub').textContent = `${NAMA_BULAN[m]} ${y}`;
+
+    // Kunci pertama sel kalender (Minggu = kolom 0)
+    const offset = new Date(y, m, 1).getDay();
+    const totalHari = new Date(y, m + 1, 0).getDate();
+
+    const dalamRentang = y === CAL_RANGE.year && m === CAL_RANGE.month - 1;
+    const hariAwal = dalamRentang ? CAL_RANGE.first : 1;
+    const hariAkhir = dalamRentang ? CAL_RANGE.last : totalHari;
+
+    let cells = HARI_MINGGU.map(h =>
+      `<span class="dp__dow" aria-hidden="true">${h}</span>`).join('');
+
+    for (let i = 0; i < offset; i++) cells += '<span class="dp__cell is-blank"></span>';
+
+    for (let d = 1; d <= totalHari; d++) {
+      const key = `${y}-${pad(m + 1)}-${pad(d)}`;
+      const aktif = d >= hariAwal && d <= hariAkhir;
+      const dipilih = key === state.day;
+      const slots = aktif ? slotsOn(key) : 0;
+      const kelasAda = CLASSES.some(k => k.day === key);
+
+      const cls = [
+        'dp__cell',
+        !aktif ? 'is-off' : '',
+        dipilih ? 'is-selected' : '',
+        aktif && slots > 0 ? 'has-slots' : '',
+        aktif && kelasAda && slots === 0 ? 'is-waitlist' : ''
+      ].filter(Boolean).join(' ');
+
+      const label = `${d} ${NAMA_BULAN[m]} ${y}` +
+        (aktif ? `, ${slots} slot tersedia` : ', di luar rentang');
+
+      cells += `<button class="${cls}" type="button" data-pick="${key}"
+                       ${aktif ? '' : 'disabled aria-disabled="true"'}
+                       aria-pressed="${dipilih}" aria-label="${label}">
+                  <span class="dp__num">${d}</span>
+                  ${aktif && slots > 0 ? '<span class="dp__dot"></span>' : ''}
+                </button>`;
+    }
+
+    $('#sheetBody').innerHTML = `
+      <div class="dp">
+        <div class="dp__nav">
+          <button class="dp__navbtn" type="button" data-nav="-1"
+                  aria-label="Bulan sebelumnya">‹</button>
+          <span class="dp__month">${NAMA_BULAN[m]} ${y}</span>
+          <button class="dp__navbtn" type="button" data-nav="1"
+                  aria-label="Bulan berikutnya">›</button>
+        </div>
+        <div class="dp__grid">${cells}</div>
+        <p class="dp__legend">
+          <span><i class="dp__key has-slots"></i>ada slot kosong</span>
+          <span><i class="dp__key is-waitlist"></i>penuh / waitlist</span>
+          <span><i class="dp__key is-off"></i>di luar rentang</span>
+        </p>
+      </div>`;
+
+    $('#sheetFoot').innerHTML = `
+      <button class="btn btn--ghost btn--block" type="button" data-dp="close">
+        Batal
+      </button>`;
+
+    $$('[data-nav]', $('#sheetBody')).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const next = shiftMonth(y, m, Number(btn.dataset.nav));
+        state.pickerYear = next.year;
+        state.pickerMonth = next.monthIdx;
+        renderCalendarSheet();
+      });
+    });
+
+    $$('[data-pick]', $('#sheetBody')).forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.day = btn.dataset.pick;
+        closeSheet();
+        renderCalendar();
+        renderClasses();
+      });
+    });
+
+    $$('[data-dp]', $('#sheetFoot')).forEach(btn => {
+      btn.addEventListener('click', () => closeSheet());
+    });
+
+    $('#sheetBody').scrollTop = 0;
+  }
+
+  $('#calLink').addEventListener('click', openCalendar);
 
   /* ======================================================================
      RENDER DAFTAR KELAS

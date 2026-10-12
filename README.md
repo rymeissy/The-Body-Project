@@ -166,9 +166,27 @@ Lima tab di bawah: **Jadwal · Cabang · Paket · Riwayat · Profil**
   dan status "● Studio Buka • jam operasional" yang ikut berubah per cabang
 - *Kartu paket* — kartu hijau tua berisi nama paket + badge AKTIF, masa berlaku,
   cakupan kelas, sisa sesi, tombol **Top Up Sesi**, dan progress bar
-- *Kalender* — judul "Oktober 2026" + tautan Lihat Kalender, lalu deret 7 hari
-  berbentuk kartu. Hari terpilih jadi hijau tua; setiap hari punya **titik hijau**
-  sebagai penanda masih ada slot kosong (mengikuti filter cabang & tipe aktif)
+- *Kalender* — judul "Oktober 2026" + tautan **Lihat Kalender** yang membuka
+  date picker bulanan, lalu deret 7 hari berbentuk kartu. Hari terpilih jadi
+  hijau tua; setiap hari punya **titik hijau** sebagai penanda masih ada slot
+  kosong (mengikuti filter cabang & tipe aktif)
+
+### Date picker
+
+Tautan "Lihat Kalender" membuka bottom sheet berisi kalender bulan penuh.
+
+| Elemen | Perilaku |
+|---|---|
+| Navigasi ‹ › | Pindah bulan; tanggal terpilih tetap ditandai |
+| Hari di luar rentang | Nonaktif (`disabled`), tampil redup |
+| Warna sel | Hijau muda = ada slot · krem = penuh/waitlist · abu-abu = di luar rentang |
+| Legenda | Menjelaskan ketiga warna di bawah grid |
+| Menutup | Tombol Batal, backdrop, atau tekan `Esc` |
+
+Setiap sel punya `aria-label` yang menyebut tanggal dan jumlah slot, misalnya
+*"13 Oktober 2026, 25 slot tersedia"*. Hanya hari dalam rentang
+(`CAL_RANGE` di `data.js`) yang bisa dipilih — saat ini 12–18 Oktober 2026,
+sesuai data kelas.
 - *Filter tipe* — Semua Kelas · Reformer · Mat Flow · Cadillac · Prenatal
 - *Kartu kelas* — jam + durasi terhitung ("50 Menit • Reformer Studio A"),
   pil "⊕ Sisa 2 dari 6 slot", judul besar, tag level + "Dapat kuota paket",

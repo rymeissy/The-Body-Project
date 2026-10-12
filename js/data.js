@@ -30,15 +30,30 @@ const INSTRUCTORS = [
   { id: 'malik',  name: 'Malik Hidayat' }
 ];
 
-const DAYS = [
-  { key: '2026-10-12', day: 'Sen', date: '12' },
-  { key: '2026-10-13', day: 'Sel', date: '13' },
-  { key: '2026-10-14', day: 'Rab', date: '14' },
-  { key: '2026-10-15', day: 'Kam', date: '15' },
-  { key: '2026-10-16', day: 'Jum', date: '16' },
-  { key: '2026-10-17', day: 'Sab', date: '17' },
-  { key: '2026-10-18', day: 'Min', date: '18' }
+/* Rentang kalender yang boleh dipilih pada date picker.
+   Bulan di luar rentang ini tidak dapat diklik. */
+const CAL_RANGE = { year: 2026, month: 10, first: 12, last: 18 };
+
+const NAMA_BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
+
+const HARI_MINGGU = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+/* Deret 7 hari ringkas untuk strip kalender di halaman Jadwal */
+const DAYS = (() => {
+  const out = [];
+  for (let d = CAL_RANGE.first; d <= CAL_RANGE.last; d++) {
+    const dt = new Date(CAL_RANGE.year, CAL_RANGE.month - 1, d);
+    out.push({
+      key: `${CAL_RANGE.year}-${String(CAL_RANGE.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      day: HARI_MINGGU[dt.getDay()],
+      date: String(d)
+    });
+  }
+  return out;
+})();
 
 const CLASSES = [
   {
