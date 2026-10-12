@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Prototype mobile web application sistem pemesanan kelas Pilates The Body Project.">
+  <meta name="theme-color" content="#26513F">
+  <title>The Body Project — Sistem Pemesanan Pilates</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<!-- ===================== AUTH: gerbang saat pertama membuka situs ===================== -->
+<section class="auth" id="authScreen" aria-label="Autentikasi">
+
+  <!-- Kolom formulir -->
+  <div class="auth__panel">
+    <div class="auth__inner">
+
+      <div class="auth__brand">
+        <div class="brand">
+          The Body Project
+          <small>Pilates Studio</small>
+        </div>
+      </div>
+
+      <!-- ---------- Masuk ---------- -->
+      <form class="auth__form" id="formLogin" novalidate aria-labelledby="loginTitle">
+        <h1 class="auth__title" id="loginTitle">Selamat datang kembali</h1>
+        <p class="auth__sub">Masuk untuk melihat jadwal dan memesan kelas.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="loginId">Email atau No. WhatsApp</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">✉</span>
+            <input type="text" id="loginId" name="loginId"
+                   autocomplete="username" placeholder="anindya@kranulo.com">
+          </div>
+          <p class="field__error" id="errLoginId" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="loginPass">Kata sandi</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">🔒</span>
+            <input type="password" id="loginPass" name="loginPass"
+                   autocomplete="current-password" placeholder="••••••••">
+            <button class="reveal" type="button" data-reveal="loginPass"
+                    aria-label="Tampilkan kata sandi" aria-pressed="false">👁</button>
+          </div>
+          <p class="field__error" id="errLoginPass" role="alert"></p>
+        </div>
+
+        <div class="auth__row">
+          <label class="check">
+            <input type="checkbox" id="rememberMe" checked>
+            <span>Ingat saya</span>
+          </label>
+          <button class="linkish" type="button" id="forgotLink">Lupa kata sandi?</button>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">Masuk</button>
+
+        <div class="auth__sep"><span>atau lanjutkan dengan</span></div>
+
+        <div class="auth__social">
+          <button class="btn btn--social" type="button" data-provider="Google">
+            <span aria-hidden="true">G</span> Google
+          </button>
+          <button class="btn btn--social" type="button" data-provider="WhatsApp">
+            <span aria-hidden="true">◉</span> WhatsApp
+          </button>
+        </div>
+
+        <p class="auth__foot">
+          Belum punya akun?
+          <button class="linkish" type="button" data-goto="register">Daftar di sini</button>
+        </p>
+      </form>
+
+      <!-- ---------- Daftar ---------- -->
+      <form class="auth__form" id="formRegister" novalidate aria-labelledby="registerTitle" hidden>
+        <h1 class="auth__title" id="registerTitle">Buat akun baru</h1>
+        <p class="auth__sub">Satu akun untuk memesan kelas dan melacak sesi.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="regName">Nama lengkap</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">👤</span>
+            <input type="text" id="regName" name="regName"
+                   autocomplete="name" placeholder="Anindya Kirana">
+          </div>
+          <p class="field__error" id="errRegName" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="regEmail">Email</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">✉</span>
+            <input type="email" id="regEmail" name="regEmail"
+                   autocomplete="email" placeholder="nama@email.com">
+          </div>
+          <p class="field__error" id="errRegEmail" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="regPhone">No. WhatsApp</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">✆</span>
+            <input type="tel" id="regPhone" name="regPhone"
+                   autocomplete="tel" placeholder="+62 812-3456-7890">
+          </div>
+          <p class="field__error" id="errRegPhone" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="regPass">Kata sandi</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">🔒</span>
+            <input type="password" id="regPass" name="regPass"
+                   autocomplete="new-password" placeholder="Minimal 6 karakter">
+            <button class="reveal" type="button" data-reveal="regPass"
+                    aria-label="Tampilkan kata sandi" aria-pressed="false">👁</button>
+          </div>
+          <div class="meter" aria-hidden="true"><span id="passMeter"></span></div>
+          <p class="field__error" id="errRegPass" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="regPass2">Ulangi kata sandi</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">🔒</span>
+            <input type="password" id="regPass2" name="regPass2"
+                   autocomplete="new-password" placeholder="Ketik ulang">
+          </div>
+          <p class="field__error" id="errRegPass2" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="check">
+            <input type="checkbox" id="regAgree">
+            <span>Saya setuju dengan <a href="#">syarat &amp; ketentuan</a> serta
+                  <a href="#">kebijakan privasi</a>.</span>
+          </label>
+          <p class="field__error" id="errRegAgree" role="alert"></p>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">Buat akun</button>
+
+        <p class="auth__foot">
+          Sudah punya akun?
+          <button class="linkish" type="button" data-goto="login">Login di sini</button>
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div class="app-shell" id="appShell" hidden>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="app-header">
+    <div class="app-header__top">
+      <div class="brand">
+        The Body Project
+        <small>Pilates Studio</small>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="icon-btn" type="button" aria-label="Notifikasi">
+          <span aria-hidden="true">🔔</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabbar" id="tabbar" aria-label="Navigasi utama">
+    <button type="button" data-view="schedule" aria-current="page">
+      <span class="tabbar__icon" aria-hidden="true">📅</span> Jadwal
+    </button>
+    <button type="button" data-view="branch">
+      <span class="tabbar__icon" aria-hidden="true">📍</span> Cabang
+    </button>
+    <button type="button" data-view="package">
+      <span class="tabbar__icon" aria-hidden="true">🎫</span> Paket
+    </button>
+    <button type="button" data-view="history">
+      <span class="tabbar__icon" aria-hidden="true">🕐</span> Riwayat
+    </button>
+    <button type="button" data-view="profile">
+      <span class="tabbar__icon" aria-hidden="true">👤</span> Profil
+    </button>
+  </nav>
+
+  <!-- ===================== VIEW: JADWAL ===================== -->
+  <main class="view is-active" id="view-schedule">
+
+    <!-- Baris atas: cabang + status buka -->
+    <div class="sch-topbar">
+      <button class="branch-pill" id="branchSwitch" type="button" aria-label="Ganti cabang">
+        <span class="branch-pill__icon" aria-hidden="true">◉</span>
+        <span id="branchName">Senopati Sanctuary</span>
+        <span class="branch-pill__caret" aria-hidden="true">▾</span>
+      </button>
+      <p class="open-status">
+        <span class="dot-live" aria-hidden="true"></span>
+        Studio Buka <span aria-hidden="true">•</span>
+        <span id="openHours">06.30 – 20.30 WIB</span>
+      </p>
+    </div>
+
+    <!-- Kartu paket aktif -->
+    <section class="pkg-card" id="pkgCard" aria-label="Paket sesi aktif"></section>
+
+    <!-- Kalender -->
+    <div class="cal-head">
+      <h2 class="cal-title"><span aria-hidden="true">▦</span> Oktober 2026</h2>
+      <button class="cal-link" type="button" id="calLink">
+        Lihat Kalender <span aria-hidden="true">›</span>
+      </button>
+    </div>
+    <div class="cal-row" role="group" aria-label="Pilih tanggal" id="calRow"></div>
+
+    <!-- Filter tipe kelas -->
+    <div class="filter-scroll" role="group" aria-label="Filter tipe kelas" id="typeFilter">
+      <button class="chip" type="button" data-type="all" aria-pressed="true">Semua Kelas</button>
+      <button class="chip" type="button" data-type="reformer">Reformer</button>
+      <button class="chip" type="button" data-type="mat">Mat Flow</button>
+      <button class="chip" type="button" data-type="cadillac">Cadillac</button>
+      <button class="chip" type="button" data-type="prenatal">Prenatal</button>
+    </div>
+
+    <!-- Daftar kelas -->
+    <div class="class-list" id="classList"></div>
+  </main>
+
+  <!-- ===================== VIEW: CABANG ===================== -->
+  <main class="view" id="view-branch">
+    <div class="view-head">
+      <div>
+        <h1>Cabang</h1>
+        <p>8 studio di Jabodetabek</p>
+      </div>
+    </div>
+
+    <div class="branch-list" id="branchList"></div>
+  </main>
+
+  <!-- ===================== VIEW: PAKET ===================== -->
+  <main class="view" id="view-package">
+    <div class="view-head">
+      <div>
+        <h1>Paket &amp; Sesi</h1>
+        <p>Ringkasan paket aktif dan kebijakan</p>
+      </div>
+    </div>
+
+    <div id="packageList"></div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <span class="panel__title">Ketentuan Kelas</span>
+      </div>
+      <div class="panel__body">
+        <ul id="policyList" style="display:grid; gap:10px;"></ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================== VIEW: RIWAYAT ===================== -->
+  <main class="view" id="view-history">
+    <div class="view-head">
+      <div>
+        <h1>Riwayat Pesanan</h1>
+        <p>12 kelas sepanjang 2026</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <span class="panel__title">Aktivitas Terakhir</span>
+        <span class="tag tag--level" id="historyCount">4</span>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </main>
+
+  <!-- ===================== VIEW: PROFIL ===================== -->
+  <main class="view" id="view-profile">
+    <div class="view-head">
+      <div>
+        <h1>Profil Saya</h1>
+        <p>Akun &amp; status keanggotaan</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__body" style="display:flex; gap:14px; align-items:center;">
+        <div class="avatar" style="width:52px;height:52px;font-size:17px;">AK</div>
+        <div>
+          <div style="font-size:16px;font-weight:600;" id="profileName">Anindya Kirana</div>
+          <div style="font-size:12px;color:var(--ink-400);margin-top:2px;" id="profileEmail">anindya@kranulo.com</div>
+          <span class="tag tag--level" style="margin-top:7px;">Pengguna / Staff</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head"><span class="panel__title">Informasi Keanggotaan</span></div>
+      <div class="panel__body">
+        <dl style="margin:0;">
+          <div class="kv"><dt>No. WhatsApp</dt><dd id="profilePhone">+62 812-3456-7890</dd></div>
+          <div class="kv"><dt>Bergabung sejak</dt><dd id="profileSince">5 Mei 2026</dd></div>
+          <div class="kv"><dt>Poin hadiah</dt><dd>340 poin</dd></div>
+          <div class="kv"><dt>Paket aktif</dt><dd>1 paket</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head"><span class="panel__title">Menu</span></div>
+      <div>
+        <button class="item" type="button" style="width:100%; text-align:left;">
+          <span class="item__icon" aria-hidden="true">🔔</span>
+          <span class="item__body"><span class="item__title">Notifikasi pemesanan</span><span class="item__sub">Email & WhatsApp</span></span>
+        </button>
+        <button class="item" type="button" style="width:100%; text-align:left;">
+          <span class="item__icon" aria-hidden="true">🎁</span>
+          <span class="item__body"><span class="item__title">Tukar poin hadiah</span><span class="item__sub">Diskon paket &amp; merchandise</span></span>
+        </button>
+        <button class="item" type="button" style="width:100%; text-align:left;">
+          <span class="item__icon" aria-hidden="true">💬</span>
+          <span class="item__body"><span class="item__title">Hubungi admin</span><span class="item__sub">Chat via WhatsApp</span></span>
+        </button>
+        <button class="item" type="button" id="logoutBtn" style="width:100%; text-align:left;">
+          <span class="item__icon" aria-hidden="true">↩︎</span>
+          <span class="item__body"><span class="item__title">Keluar</span><span class="item__sub" id="logoutSub">Sesi tersimpan di perangkat ini</span></span>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== BOTTOM SHEET: ALUR PEMESANAN ===================== -->
+<div class="backdrop" id="backdrop"></div>
+
+<section class="sheet" id="bookingSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet__grip"></div>
+
+  <div class="sheet__head">
+    <h2 id="sheetTitle">Konfirmasi Pemesanan</h2>
+    <p id="sheetSub"></p>
+  </div>
+
+  <div class="sheet__body" id="sheetBody"></div>
+
+  <div class="sheet__foot" id="sheetFoot"></div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
