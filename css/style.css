@@ -48,9 +48,9 @@
   --sh-md: 0 4px 16px rgba(31, 61, 49, .08);
   --sh-lg: 0 12px 32px rgba(31, 61, 49, .14);
 
-  /* Layout */
-  --shell-max: 1180px;   /* disisakan ruang agar gutter putih selalu terlihat */
-  --tabbar-h: 68px;
+  /* Layout — tidak ada layout desktop; kolom tetap 512px */
+  --shell-max: 512px;
+  --tabbar-h: 62px;
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
                Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -93,16 +93,18 @@ a { color: var(--green-700); }
 }
 
 /* ---------- 3. App shell ---------- */
+/* Kolom aplikasi: lebar tetap di semua ukuran layar.
+   Di desktop layar tetap 512px di tengah, dengan gutter putih di
+   kiri dan kanan — pola yang dipakai sweatbar.id. */
 .app-shell {
   width: 100%;
-  max-width: 520px;            /* mobile-first: tinggi seperti ponsel */
+  max-width: 512px;
   min-height: 100dvh;
   margin-inline: auto;
   background: var(--cream-50);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  /* Garis rambut tipis, bukan bayalan berat — kolom tetap terbaca di atas putih */
+  padding-bottom: calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom));
   box-shadow: 0 0 0 1px var(--line);
 }
 
@@ -333,10 +335,10 @@ a { color: var(--green-700); }
   text-align: center;
 }
 
-/* Layar lebar: form tetap satu kolom, hanya tata letak lebih lapang */
-@media (min-width: 900px) {
-  .auth__panel { padding: 48px 56px; }
-  .auth__inner { max-width: 420px; }
+/* Auth juga memakai kolom sempit di semua ukuran layar, seperti situs acuan.
+   Yang berubah hanya jarak tepi agar tidak terlalu rapat di layar besar. */
+@media (min-width: 768px) {
+  .auth__panel { padding: 40px 24px; }
 }
 
 /* ==========================================================================
@@ -1570,160 +1572,101 @@ a { color: var(--green-700); }
 }
 
 /* ==========================================================================
-   13. RESPONSIVE — tablet (≥768px): nav pindah ke atas, grid 2 kolom
+   13. RESPONSIVE
+
+   Aplikasi ini sengaja TIDAK memiliki layout desktop.
+   Berbeda dengan situs pada umumnya, tampilan tetap berupa kolom
+   selebar 512px di semua ukuran layar — persis seperti sweatbar.id
+   yang memakai .max-width { max-width: 512px; margin: 0 auto } tanpa
+   media query yang mengubahnya.
+
+   Yang perlu disesuaikan hanya layar kecil (300–480px).
    ========================================================================== */
-@media (min-width: 768px) {
-  body { background: #FFFFFF; }
 
-  .app-shell {
-    max-width: 960px;
-    padding-bottom: 0;
-    box-shadow: 0 0 0 1px var(--line);
+/* ---------- Layar kecil: rapatkan sedikit agar tidak berdesakan ---------- */
+@media (min-width: 300px) and (max-width: 480px) {
+  .view { padding: 14px; }
+
+  /* Filter chips tidak lagi menabrak tepi */
+  .filter-scroll,
+  .cal-row {
+    margin-inline: -14px;
+    padding-inline: 14px;
   }
 
-  /* Header tidak lagi sticky — biarkan user menggulir ke konten */
-  .app-header {
-    position: static;
-    border-radius: 0;
-    padding: 18px 28px 20px;
-  }
-  .app-header__top { max-width: 100%; }
-
-  /* Tabbar → navigasi horizontal melayang di atas */
+  /* Bottom nav ikut terangkat seperti sweatbar (translateY 8px) */
   .tabbar {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    height: auto;
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    justify-content: start;
-    gap: 6px;
-    padding: 10px 28px;
-    background: var(--green-800);
-    border: 0;
-    border-radius: 0;
-    box-shadow: var(--sh-sm);
+    height: calc(var(--tabbar-h) + 10px + env(safe-area-inset-bottom));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
   }
-  .tabbar button {
-    flex-direction: row;
-    gap: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
-    color: var(--cream-100);
-    border-radius: var(--r-full);
-    transition: background .18s ease;
-  }
-  .tabbar button:hover { background: rgba(255, 255, 255, .12); }
-  .tabbar button[aria-current="page"] {
-    background: var(--cream-50);
-    color: var(--green-800);
-  }
-  .tabbar button[aria-current="page"] .tabbar__icon {
-    background: none;
-    transform: none;
-  }
-  .tabbar__icon { width: auto; height: auto; background: none; font-size: 15px; }
-
-  .view { padding: 24px 28px 32px; }
-  .view.is-active { display: block; }
-  .view-head h1 { font-size: 24px; }
-
-  .quota { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .quota__val { font-size: 26px; }
-
-  .filter-scroll { margin-inline: 0; padding-inline: 0; }
-  .filter-row { grid-template-columns: 1fr 1fr auto; }
-  .filter-row > .field:first-child { grid-column: auto; }
-  .field select { cursor: pointer; }
-
-  /* Kartu kelas 2 kolom */
-  .class-list { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-
-  /* Sheet jadi panel tengah, bukan bottom sheet */
-  .sheet {
-    top: 50%; bottom: auto;
-    left: 50%; right: auto;
-    transform: translate(-50%, -46%) scale(.97);
-    border-radius: var(--r-lg);
-    max-height: 88dvh;
-    opacity: 0;
-    transition: transform .24s ease, opacity .24s ease;
-  }
-  .sheet.is-open { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  .sheet__grip { display: none; }
-  .sheet__foot { padding-bottom: 16px; }
-
-  .toast { bottom: 28px; }
-
-  /* Panel 2 kolom supaya tidak memanjang */
-  .view-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
-}
-
-/* ==========================================================================
-   14. RESPONSIVE — desktop (≥1024px): sidebar + grid 3 kolom
-   ========================================================================== */
-@media (min-width: 1024px) {
-  .app-shell {
-    max-width: var(--shell-max);
-    display: grid;
-    grid-template-columns: 236px 1fr;
-    grid-template-rows: auto 1fr;
-    align-items: start;
-  }
-
-  .app-header {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    padding: 20px 36px;
-  }
-  .app-header__top { flex: 1; }
-
-  /* Navigasi jadi sidebar vertikal */
-  .tabbar {
-    grid-column: 1;
-    grid-row: 2;
-    grid-template-columns: none;   /* reset 4 kolom bawaan mode mobile */
-    grid-auto-flow: row;
-    align-content: start;
-    gap: 4px;
-    padding: 28px 18px;
-    margin: 0;
-    background: var(--white);
-    border-right: 1px solid var(--line);
-    border-radius: 0;
-    position: sticky;
-    top: 0;
-  }
-  .tabbar button {
-    flex-direction: row;
-    justify-content: flex-start;
-    padding: 11px 16px;
-    font-size: 14px;
-    color: var(--ink-600);
-    border-radius: var(--r-sm);
-  }
-  .tabbar button:hover { background: var(--cream-100); }
-  .tabbar button[aria-current="page"] {
-    background: var(--green-50);
-    color: var(--green-800);
-    font-weight: 600;
-  }
-  .tabbar__icon { font-size: 16px; width: 22px; }
 
   .view {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 32px 36px 48px;
+    padding-bottom: calc(var(--tabbar-h) + 22px + env(safe-area-inset-bottom));
   }
 
-  .view-head h1 { font-size: 27px; }
-  .class-list { grid-template-columns: repeat(3, 1fr); }
-  .pay-grid { grid-template-columns: repeat(4, 1fr); }
-  .quota { max-width: 720px; }
-  .sheet { max-width: 560px; }
+  /* Kartu paket & kelas sedikit lebih rapat */
+  .pkg-card { padding: 14px 15px 12px; }
+  .class-card { padding: 13px; }
+
+  .class-card__time { font-size: 16px; }
+  .class-card__title { font-size: 16px; }
+
+  /* Grid kalender lebih rapat agar muat di layar sempit */
+  .dp__cell { min-height: 34px; font-size: 12px; }
+  .dp__grid { gap: 3px; }
+
+  .auth__panel { padding: 20px 18px 28px; }
+  .sheet__body { padding: 14px; }
+  .sheet__foot { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- Layar sangat sempit (< 300px) ---------- */
+@media (max-width: 299px) {
+  .tabbar button { font-size: 8px; }
+  .quota { grid-template-columns: 1fr; }
+  .dp__cell { min-height: 30px; font-size: 11px; }
+}
+
+/* ---------- Layar pendek (mis. ponsel landscape): perbesar area konten ---------- */
+@media (max-height: 560px) {
+  .sheet { max-height: 96dvh; }
+  .pkg-card__bar { margin-top: 10px; }
+  .chart { height: 110px; }
+}
+
+/* ---------- Layar lebar: pastikan kolom tetap di tengah ---------- */
+@media (min-width: 768px) {
+  body {
+    background: #FFFFFF;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Navigasi melayang di dasar layar,Lebar 430px seperti sweatbar */
+  .tabbar {
+    left: 50%;
+    right: auto;
+    width: 430px;
+    transform: translateX(-50%);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -1px 12px rgba(28, 38, 32, .07);
+    overflow: hidden;
+  }
+}
+
+/* ---------- 15. Aksesibilitas & motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+@media print {
+  .tabbar, .backdrop, .sheet, .toast, .app-header__top .icon-btn { display: none !important; }
+  .app-shell { max-width: none; box-shadow: none; }
+  body { display: block; }
 }
 
 /* ---------- 15. Aksesibilitas & motion ---------- */
