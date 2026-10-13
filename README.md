@@ -1,9 +1,10 @@
 # Prototype Mobile Web Application — The Body Project
 
-Prototype sistem pemesanan kelas Pilates berbasis web untuk **Studio Pilates The Body Project**,
-mengikuti desain Figma (dominan hijau & krem) dan menerapkan **responsive web design**.
+Prototype sistem pemesanan kelas Pilates berbasis web untuk **Studio Pilates The Body Project**.
+Tampilan bergaya hijau dan krem, dengan lebar kolom dikunci 512px pada semua
+ukuran layar.
 
-> Prototipe UI (front-end) — sesuai ruang lingkup skripsi BAB 4. Belum ada backend/API.
+> Prototipe UI (front-end). Belum ada backend/API.
 
 ---
 
@@ -45,7 +46,7 @@ Semua data di `data.js` akan diganti API saat的开发 dilanjutkan ke tahap impl
 
 | Token | Nilai | Dipakai untuk |
 |---|---|---|
-| `--green-800` | `#26513F` | Header, tombol utama, sidebar aktif |
+| `--green-800` | `#26513F` | Header, tombol utama, tab aktif |
 | `--green-700` | `#2E5B4A` | Teks aksen, tag, border terpilih |
 | `--cream-50` | `#FBF9F5` | Latar konten |
 | `--cream-100` | `#F5F1E9` | Latar halaman, panel header |
@@ -59,16 +60,20 @@ dengan fallback ke serif & system font bila Google Fonts tidak terjangkau.
 
 ---
 
-## Breakpoint
+## Lebar layar
 
-| Lebar | Navigasi | Grid kartu | Panel pemesanan |
-|---|---|---|---|
-| `< 768px` | Bottom tab bar | 1 kolom | Bottom sheet dari bawah |
-| `768–1023px` | Horizontal, sticky di atas | 2 kolom | Modal terpusat |
-| `≥ 1024px` | Sidebar kiri 236px | 3 kolom | Modal 560px, metode bayar 4 kolom |
+Kolom aplikasi dikunci **512px** di semua ukuran layar. Navigasi bawah
+berlebar **430px** dan tetap melayang di dasar layar.
 
-Pendekatan **mobile-first**: aturan dasar ditulis untuk layar kecil,
-lalu di-*enhance* pada `@media (min-width: …)`.
+Tidak ada layout desktop: di layar besar, kolom tetap sempit di tengah
+dengan gutter putih di kiri dan kanan.
+
+| Lebar | Yang menyesuaikan |
+|---|---|
+| `< 300px` | Ukuran font nav dan sel kalender dikecilkan |
+| `300–480px` | Padding konten, tinggi baris kalender, dan jarak bawah nav dirapatkan |
+| `≥ 768px` | Navigasi diberi radius atas dan bayangan tipis |
+| Tinggi `< 560px` | tinggi sheet, progress bar, dan grafik dikurangi |
 
 ---
 
@@ -143,24 +148,19 @@ Perilaku yang ikut diuji:
 ## Latar halaman
 
 Latar luar halaman **putih** dengan kolom aplikasi krem terpusat di tengahnya,
-sehingga terlihat **gutter putih di kiri dan kanan** — mengikuti pola
-sweatbar.id. Kolom aplikasi dibatasi 520px (mobile) → 960px (tablet) →
-1180px (desktop) supaya gutter selalu muncul di layar laptop.
-
-Di bawah 768px kolom aplikasi memenuhi layar penuh, sehingga tidak ada gutter sama sekali —
-tampilan mobile apa adanya.
+sehingga terlihat **gutter putih di kiri dan kanan**. Di bawah 512px kolom
+mengisi layar penuh sehingga tidak ada gutter.
 
 ## Navigasi
 
 Lima tab di bawah: **Jadwal · Cabang · Paket · Riwayat · Profil**
 
-- **< 768px** — bottom tab bar
-- **768–1023px** — horizontal, sticky di atas
-- **≥ 1024px** — sidebar kiri
+Navigasi tetap berada di dasar layar pada semua ukuran layar — tidak pernah
+berubah menjadi sidebar.
 
 ## Fitur yang terimplementasi
 
-**Jadwal** — mengikuti desain Figma, dari atas ke bawah:
+**Jadwal** — dari atas ke bawah:
 
 - *Baris atas* — pill cabang (dengan caret, bisa diklik untuk memutar 8 cabang)
   dan status "● Studio Buka • jam operasional" yang ikut berubah per cabang
@@ -209,7 +209,7 @@ server.
 Perubahan state pada halaman ini: memfilter tipe atau memilih hari akan
 me-render ulang deret kalender (titik ikut berubah) dan daftar kelas.
 
-**Cabang** — 8 studio di Jabodetabek. Kartu mengikuti desain Figma: area hero
+**Cabang** — 8 studio di Jabodetabek. Kartu berisi: area hero
 dengan badge *Flagship Studio*, overlay "Buka Hari Ini" + jam operasional dan
 jarak, nama studio dengan tag status, alamat, chip fasilitas
 (Reformer Beds / Private Suites / Valet Parking / Shower), lalu footer dengan
@@ -220,43 +220,6 @@ Ikon peta membuka Google Maps di tab baru lewat URL pencarian berdasarkan alamat
 
 Angka pada tombol "Lihat Jadwal (N Sesi)" dihitung dari data kelas,
 bukan angka statis.
-
-> **Catatan data:** area hero masih berupa placeholder gradien karena belum ada
-> aset foto. Ganti dengan foto studio asli (300 dpi, format JPG) lalu ubah
-> `background` pada `.branch-card__hero` menjadi `background-image: url(...)`.
-> Alamat, nomor telepon, jam buka, dan jarak juga masih placeholder.
-
-### Foto yang belum ada
-
-Tiga tempat di prototype ini memakai placeholder karena belum ada aset gambar.
-Supaya gampang ditukar nanti, ketiganya sudah disiapkan:
-
-| Tempat | Sekarang | Cara ganti |
-|---|---|---|
-| Hero kartu cabang | Gradien + tekstur | `.branch-card__hero` → `background-image: url(...)` |
-| Avatar instruktur | Inisial dalam lingkaran | Ganti isi `.avatar--ring` di `classCard()` menjadi `<img>` |
-| Foto merchandise | Belum ada halaman | — |
-
-Untuk avatar, di `classCard()` ganti:
-
-```js
-<span class="avatar avatar--ring" aria-hidden="true">${initials(k.instructor)}</span>
-```
-
-dengan:
-
-```js
-<img class="avatar avatar--ring" src="${k.instructorPhoto}" alt="">
-```
-
-lalu tambahkan `instructorPhoto` ke tiap entri `CLASSES` di `data.js`.
-
-`avatar--ring` sudah punya `border-radius: 50%`, jadi yang perlu ditambah
-adalah `object-fit: cover` supaya foto tidak tergencet:
-
-```css
-.avatar--ring { object-fit: cover; }
-```
 
 **Paket** — daftar paket aktif dengan progress bar, masa berlaku, harga per sesi · ketentuan kelas
 
@@ -270,30 +233,25 @@ semantic HTML + `aria-current`/`aria-pressed` · fokus keyboard terlihat ·
 
 ---
 
-## Fitur yang belum ada
+## Placeholder yang perlu diganti
 
-Berikutnya yang wajar dikerjakan:
+| Selector | Sekarang | Ganti dengan |
+|---|---|---|
+| `.branch-card__hero` | Gradien + tekstur | `background-image: url(...)` |
+| `.avatar--ring` | Inisial huruf | `<img src="...">` di `classCard()` pada `js/app.js` |
 
-1. **Halaman admin** — kelola jadwal, kapasitas, paket, dan absensi
-   (sudah dibahas di BAB 3 tapi belum dibuat UI-nya)
-2. **Halaman merchandise** — etalase e-commerce (karena itu revenue stream kedua)
-3. **Pencarian kelas** — state `search` sudah ada di `app.js`, tinggal Alison input
-4. **State persisten** — saat ini reset saat reload; bisa pakai `localStorage`
-5. **Integrasi backend** — ganti `data.js` dengan fetch ke REST API
+Untuk avatar, tambahkan `instructorPhoto` ke tiap entri `CLASSES` di `data.js`,
+lalu tambahkan `object-fit: cover` agar foto tidak tergencet.
+
+Data cabang (alamat, nomor telepon, jam buka, jarak) juga masih contoh —
+ganti dengan data sebenarnya.
 
 ---
 
-## Catatan untuk paper IEEE
+## Fitur yang belum ada
 
-Untuk paper 6 halaman, jangan masukkan semua layar. Rujukan pemilihan gambar:
-
-| Layar | Gunanya | Prioritas |
-|---|---|---|
-| Jadwal + status kuota | Membuktikan real-time capacity & waitlist | Wajib |
-| Detail paket ("Gunakan Kuota") | Fitur pembeda utama | Wajib |
-| Checkout + metode bayar | Alur end-to-end | Wajib |
-| Halaman admin | Sisi back-office | Opsional |
-
-Gabung 3 layar sisi pelanggan ke satu gambar horizontal (mis. Fig. 4),
-lalu 1 layar admin terpisah (Fig. 5). Export dari browser atau Figma
-dengan **300 dpi** agar tidak pecah saat dicetak.
+1. **Halaman admin** — kelola jadwal, kapasitas, paket, dan absensi (UI-nya belum dibuat)
+2. **Halaman merchandise** — etalase e-commerce
+3. **Pencarian kelas** — state `search` sudah ada di `app.js`, tinggal ditambahkan input
+4. **State persisten** — saat ini reset saat reload; bisa pakai `localStorage`
+5. **Integrasi backend** — ganti `data.js` dengan fetch ke REST API
