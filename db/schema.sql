@@ -92,22 +92,52 @@ CREATE TABLE instructors (
 
 -- -----------------------------------------------------------------------------
 -- Accounts
+--
+-- Customers sign in with a phone number and a one-time code, so email and
+-- password_hash are optional. A row with neither phone_verified_at nor a
+-- password cannot have signed in yet.
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE users (
-    id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    role            text        NOT NULL DEFAULT 'customer'
-                                  CHECK (role IN ('customer', 'admin')),
-    full_name       text        NOT NULL,
-    email           citext      NOT NULL UNIQUE,
-    phone           citext      NOT NULL UNIQUE,
-    password_hash   text        NOT NULL,
-    member_since    date        NOT NULL DEFAULT CURRENT_DATE,
-    membership_tier text,
-    loyalty_points  integer     NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    updated_at      timestamptz NOT NULL DEFAULT now()
+    id                bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    role              text        NOT NULL DEFAULT 'customer'
+                                    CHECK (role IN ('customer', 'admin')),
+    full_name         text        NOT NULL,
+    email             citext      UNIQUE,
+    phone             citext      NOT NULL UNIQUE,
+    password_hash     text,
+    phone_verified_at timestamptz,
+    member_since      date        NOT NULL DEFAULT CURRENT_DATE,
+    membership_tier   text,
+    loyalty_points    integer     NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
+    created_at        timestamptz NOT NULL DEFAULT now(),
+    updated_at        timestamptz NOT NULL DEFAULT now()
 );
+
+-- -----------------------------------------------------------------------------
+-- One-time codes
+--
+-- Only the hash is stored. Sending an SMS costs money, so the table also
+-- carries the rate limiting: fn_request_otp refuses a second code within
+-- fn_otp_resend_seconds, and fn_verify_otp locks out after a few wrong guesses.
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE otp_codes (
+    id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    phone       citext     NOT NULL,
+    code_hash   text       NOT NULL,
+    purpose     text       NOT NULL DEFAULT 'login'
+                           CHECK (purpose IN ('login', 'register')),
+    expires_at  timestamptz NOT NULL,
+    attempts    smallint   NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+    consumed_at timestamptz,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+-- Only the newest live code per number is ever read.
+CREATE INDEX ix_otp_codes_phone_live
+    ON otp_codes (phone, created_at DESC)
+    WHERE consumed_at IS NULL;
 
 -- -----------------------------------------------------------------------------
 -- Packages

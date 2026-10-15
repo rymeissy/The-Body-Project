@@ -374,3 +374,159 @@ BEGIN
     RETURN n;
 END;
 $$;
+
+-- =============================================================================
+--  OTP
+--
+--  A customer signs in with a phone number and a six-digit code sent over
+--  WhatsApp. The code is generated here, stored only as a hash, and can be
+--  spent exactly once.
+-- =============================================================================
+
+-- Tuning knobs, kept in one place so the server and the UI agree.
+CREATE OR REPLACE FUNCTION fn_otp_ttl_seconds()        RETURNS integer LANGUAGE sql IMMUTABLE AS $$ SELECT 300 $$;  -- 5 menit
+CREATE OR REPLACE FUNCTION fn_otp_resend_seconds()    RETURNS integer LANGUAGE sql IMMUTABLE AS $$ SELECT 60  $$;
+CREATE OR REPLACE FUNCTION fn_otp_max_attempts()      RETURNS integer LANGUAGE sql IMMUTABLE AS $$ SELECT 3   $$;
+
+-- -----------------------------------------------------------------------------
+-- Issue a code.
+--
+--   p_phone    already normalised to 62xxxxxxxxx
+--   p_purpose  'login' or 'register'
+--
+-- Returns the six-digit code so the caller can put it in a WhatsApp message.
+-- The code is never stored in the clear — only crypt() of it, with a per-row
+-- salt, the same as a password hash.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION fn_request_otp(
+    p_phone   citext,
+    p_purpose text DEFAULT 'login'
+) RETURNS TABLE (code text, expires_at timestamptz, resend_after int)
+LANGUAGE plpgsql AS $$
+DECLARE
+    last_sent  timestamptz;
+    new_code   text;
+    new_expiry timestamptz;
+BEGIN
+    -- One live code per number: a fresh request retires the old one.
+    UPDATE otp_codes
+       SET consumed_at = now()
+     WHERE phone = p_phone
+       AND consumed_at IS NULL;
+
+    -- Sending a message costs money, so hold off on an immediate resend.
+    SELECT created_at INTO last_sent
+    FROM otp_codes
+    WHERE phone = p_phone
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    IF last_sent IS NOT NULL
+       AND last_sent > now() - make_interval(secs => fn_otp_resend_seconds()) THEN
+        RAISE EXCEPTION 'Tunggu % detik sebelum meminta kode lagi',
+              ceil(extract(epoch FROM (last_sent + make_interval(secs => fn_otp_resend_seconds()) - now())));
+    END IF;
+
+    new_code := lpad((floor(random() * 1000000))::integer::text, 6, '0');
+
+    INSERT INTO otp_codes (phone, code_hash, purpose, expires_at)
+    VALUES (p_phone,
+            crypt(new_code, gen_salt('bf', 6)),
+            p_purpose,
+            now() + make_interval(secs => fn_otp_ttl_seconds()))
+    RETURNING otp_codes.expires_at INTO new_expiry;
+
+    RETURN QUERY SELECT new_code, new_expiry, fn_otp_resend_seconds();
+END;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Check a code. Does not create or sign in anybody — that is the server's job.
+--
+--   Returns 'ok'        the code matched
+--           'expired'   the code timed out
+--           'locked'    too many wrong guesses
+--           'invalid'   no live code for this number
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION fn_verify_otp(
+    p_phone citext,
+    p_code  text
+) RETURNS text
+LANGUAGE plpgsql AS $$
+DECLARE
+    row_otp otp_codes%ROWTYPE;
+BEGIN
+    SELECT * INTO row_otp
+    FROM otp_codes
+    WHERE phone = p_phone
+      AND consumed_at IS NULL
+    ORDER BY created_at DESC
+    LIMIT 1
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN 'invalid';
+    END IF;
+
+    IF row_otp.expires_at <= now() THEN
+        UPDATE otp_codes SET consumed_at = now() WHERE id = row_otp.id;
+        RETURN 'expired';
+    END IF;
+
+    IF row_otp.attempts >= fn_otp_max_attempts() THEN
+        UPDATE otp_codes SET consumed_at = now() WHERE id = row_otp.id;
+        RETURN 'locked';
+    END IF;
+
+    IF crypt(p_code, row_otp.code_hash) = row_otp.code_hash THEN
+        UPDATE otp_codes SET consumed_at = now() WHERE id = row_otp.id;
+        RETURN 'ok';
+    END IF;
+
+    UPDATE otp_codes SET attempts = attempts + 1 WHERE id = row_otp.id;
+    RETURN 'invalid';
+END;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Find or create the account behind a verified number.
+--
+-- Verification has already happened by the time this runs, so creating on the
+-- fly is safe: nobody can reach it without a code they received on this
+-- number.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION fn_upsert_user(
+    p_phone citext,
+    p_name  text,
+    p_email citext DEFAULT NULL
+) RETURNS users
+LANGUAGE plpgsql AS $$
+DECLARE
+    found_user users%ROWTYPE;
+BEGIN
+    SELECT * INTO found_user FROM users WHERE phone = p_phone FOR UPDATE;
+
+    IF FOUND THEN
+        -- Fill in whatever was missing the first time round.
+        UPDATE users
+           SET full_name = CASE WHEN full_name = '' THEN p_name ELSE full_name END,
+               email     = COALESCE(email, p_email),
+               phone_verified_at = now()
+         WHERE id = found_user.id
+        RETURNING * INTO found_user;
+        RETURN found_user;
+    END IF;
+
+    INSERT INTO users (full_name, email, phone, phone_verified_at)
+    VALUES (COALESCE(NULLIF(trim(p_name), ''), 'Pelanggan ' || right(p_phone, 4)),
+            p_email,
+            p_phone,
+            now())
+    RETURNING * INTO found_user;
+
+    RETURN found_user;
+END;
+$$;

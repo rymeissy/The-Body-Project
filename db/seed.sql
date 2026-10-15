@@ -128,6 +128,11 @@ INSERT INTO users (role, full_name, email, phone, password_hash, membership_tier
 VALUES ('admin', 'Admin The Body Project', 'admin@tbp.id', '+628110000001',
         crypt('password123', gen_salt('bf')), 'Staff');
 
+-- Seeded accounts are already phone-verified, so any of them can sign in with
+-- their number and receive an OTP. No password is kept for them in practice —
+-- the hash above is only there so the column has a value in the sample data.
+UPDATE users SET phone_verified_at = now();
+
 -- -----------------------------------------------------------------------------
 -- Packages
 -- -----------------------------------------------------------------------------
