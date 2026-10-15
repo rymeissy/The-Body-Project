@@ -374,9 +374,11 @@
               <span class="instructor__role">${INSTRUCTOR_ROLES[k.instructor] || 'Pilates Instructor'}</span>
             </span>
           </div>
-          <button class="btn btn--primary" type="button" data-book="${k.id}">
-            ${full ? 'Daftar Tunggu' : 'Book Seat'}
-            <span aria-hidden="true">→</span>
+          <button class="btn ${full ? 'btn--waitlist' : 'btn--primary'}"
+                  type="button" data-book="${k.id}">
+            ${full
+              ? '<span aria-hidden="true">🔔</span> Gabung Waitlist'
+              : 'Book Sesi <span aria-hidden="true">→</span>'}
           </button>
         </div>
       </article>`;
@@ -661,7 +663,7 @@
               type="button" data-mode="waitlist">
         <span class="option__radio" aria-hidden="true">✓</span>
         <span class="option__body">
-          <span class="option__title">Masuk Daftar Tunggu</span>
+          <span class="option__title">Gabung Waitlist</span>
           <span class="option__sub">Kursi akan dilepas otomatis bila ada pembatalan · Bayar di akhir</span>
         </span>
         <span class="option__price">Gratis</span>
@@ -843,7 +845,7 @@
             <button class="btn btn--primary btn--block" type="button" data-act="pay">
               ${state.payMode === 'dropin'
                 ? 'Bayar ' + rupiah(DROPIN_PRICE)
-                : state.payMode === 'waitlist' ? 'Daftar Tunggu' : 'Konfirmasi &amp; Potong Kuota'}
+                : state.payMode === 'waitlist' ? 'Gabung Waitlist' : 'Konfirmasi &amp; Potong Kuota'}
             </button>`;
   }
 

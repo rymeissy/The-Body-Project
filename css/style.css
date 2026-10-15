@@ -679,7 +679,8 @@ a { color: var(--green-700); }
   transition: border-color .16s ease, box-shadow .16s ease;
 }
 .class-card:hover { border-color: var(--green-200); box-shadow: var(--sh-sm); }
-.class-card.is-full { background: var(--cream-100); }
+/* Kartu kelas yang penuh tetap putih. Status penuh ditandai oleh
+   badge merah di header dan tombol Gabung Waitlist di footer. */
 
 .class-card__head {
   display: flex;
@@ -850,51 +851,7 @@ a { color: var(--green-700); }
   white-space: nowrap;
 }
 
-/* ---------- 9. Kartu kelas ---------- */
-.class-list { display: grid; gap: 12px; }
-
-.class-card {
-  position: relative;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 16px;
-  display: grid;
-  gap: 10px;
-  transition: border-color .16s ease, box-shadow .16s ease;
-}
-.class-card:hover { border-color: var(--green-200); box-shadow: var(--sh-sm); }
-.class-card.is-full { background: var(--cream-100); }
-
-.class-card__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.time {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  white-space: nowrap;
-}
-.time small {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--ink-400);
-  margin-left: 3px;
-}
-.class-card__name {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-.class-card__meta {
-  font-size: 11px;
-  color: var(--ink-400);
-  margin-top: 3px;
-}
-
+/* ---------- Tag ---------- */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -910,21 +867,7 @@ a { color: var(--green-700); }
 .tag--branch  { background: var(--cream-200); color: var(--ink-600); }
 .tag--tag     { background: var(--green-100); color: var(--green-800); }
 
-.class-card__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line);
-}
-.instructor {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  min-width: 0;
-}
+/* ---------- Avatar ---------- */
 .avatar {
   flex: 0 0 auto;
   width: 30px; height: 30px;
@@ -935,14 +878,7 @@ a { color: var(--green-700); }
   font-size: 11px;
   font-weight: 700;
 }
-.instructor__name { font-weight: 600; }
-.instructor__role {
-  font-size: 10px;
-  color: var(--ink-400);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+
 
 .btn {
   display: inline-flex;
@@ -963,6 +899,13 @@ a { color: var(--green-700); }
 .btn--ghost:hover   { background: var(--green-50); }
 .btn--muted     { background: var(--cream-200); color: var(--ink-400); cursor: not-allowed; }
 .btn--block     { width: 100%; padding-block: 13px; font-size: 14px; }
+
+/* Gabung Waitlist — tombol sekunder, bukan aksi utama */
+.btn--waitlist {
+  background: var(--cream-200);
+  color: var(--green-800);
+}
+.btn--waitlist:hover { background: var(--cream-300); }
 
 /* ---------- 9b. Kartu cabang ---------- */
 .branch-list { display: grid; gap: 14px; }

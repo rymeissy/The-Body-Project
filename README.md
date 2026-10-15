@@ -52,7 +52,7 @@ Semua data di `data.js` akan diganti API saat的开发 dilanjutkan ke tahap impl
 | `--cream-100` | `#F5F1E9` | Latar halaman, panel header |
 | `--cream-200` | `#EDE7DA` | Pembatas, progress track |
 | `--gold-600` | `#A8863C` | Badge "Sisa 2 dari 6 slot" / "Tersedia: 4 slot" |
-| `--red-700` | `#B23B2E` | Badge "Penuh (Waitlist: 1 orang)" |
+| `--red-700` | `#B23B2E` | Badge "Penuh · Waitlist 1" |
 | `--ink-900` | `#1C2620` | Teks utama |
 
 Tipografi: `Fraunces` (display/serif) untuk judul, `Inter` untuk UI,
@@ -125,11 +125,11 @@ Kolom merek/panel dekoratif tidak digunakan agar fokus tetap pada form.
 
 ```
 Kartu kelas
-  └─ Book Seat / Daftar Tunggu
+  └─ Book Sesi / Gabung Waitlist
        └─ Langkah 1 — Pilih Paket
             • Gunakan Kuota Paket (sisa sesi dipotong otomatis)
             • Beli Drop-in / Sesi Baru  Rp 375.000
-            • Masuk Daftar Tunggu (kursi penuh)
+            • Gabung Waitlist (kursi penuh)
             └─ Langkah 2 — Data Peserta + kebijakan
                  └─ Langkah 3 — Metode pembayaran
                       (QRIS · BCA VA · GoPay/OVO · Kartu Kredit)
@@ -140,7 +140,7 @@ Perilaku yang ikut diuji:
 
 - Sisa kuota paket berkurang dan **langsung tercermin** di ringkasan & halaman Paket
 - `taken` bertambah sehingga status kapasitas berubah ("Sisa 2" → "Sisa 1")
-- Kelas yang penuh menampilkan opsi **Daftar Tunggu** dan menambah penghitung waitlist
+- Kelas yang penuh menampilkan tombol **Gabung Waitlist** dan menambah penghitung waitlist
 - Booking baru langsung masuk ke **Riwayat** dengan kode `TBP-26014-08`
 
 ---
@@ -204,7 +204,8 @@ server.
 - *Filter tipe* — Semua Kelas · Reformer · Mat Flow · Cadillac · Prenatal
 - *Kartu kelas* — jam + durasi terhitung ("50 Menit • Reformer Studio A"),
   pil "⊕ Sisa 2 dari 6 slot", judul besar, tag level + "Dapat kuota paket",
-  instruktur dengan peran (Lead Reformer Coach dll), dan tombol Book Seat
+  instruktur dengan peran (Lead Reformer Coach dll), dan tombol Book Sesi.
+  Kelas yang penuh menampilkan tombol sekunder **Gabung Waitlist**.
 
 Perubahan state pada halaman ini: memfilter tipe atau memilih hari akan
 me-render ulang deret kalender (titik ikut berubah) dan daftar kelas.
