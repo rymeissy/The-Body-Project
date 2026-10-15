@@ -18,7 +18,7 @@ The three SQL files run automatically on first start, in order:
 | File | Contents |
 |---|---|
 | `schema.sql` | Extensions, 15 tables, indexes, constraints, triggers, 4 views |
-| `functions.sql` | 10 functions, the booking-code sequence, OTP settings |
+| `functions.sql` | 17 functions, the booking-code sequence, OTP settings |
 | `seed.sql` | Reference data, 8 branches, 8 class templates, 90 days of sessions, demo bookings |
 
 Rebuild from scratch after editing any of them:
@@ -95,33 +95,48 @@ that must print five zeros.
 | `fn_book_session(customer, session, use_package, method)` | Books a seat, or joins the waitlist when full |
 | `fn_cancel_booking(booking, reason)` | Refunds quota and promotes the first waitlister |
 | `fn_generate_sessions(from, to)` | Materialises sessions from the weekly templates |
-| `fn_mark_attendance(booking, attended)` | Check-in, awards loyalty points |
+| `fn_mark_attendance(booking, attended)` | Check-in for a class |
 | `fn_expire_packages()` | Marks lapsed packages |
 | `fn_close_finished_sessions()` | Retires past sessions |
 | `fn_next_booking_code()` | `TBP-261015-0007` |
-| `fn_request_otp(phone, purpose)` | Issues a six-digit code, returns it for the server to send |
+| `fn_request_otp(phone)` | Issues a six-digit code, returns it for the server to send |
 | `fn_verify_otp(phone, code)` | `ok` / `invalid` / `expired` / `locked` |
-| `fn_upsert_user(phone, name, email)` | Finds the account, or creates it after verification |
+| `fn_upsert_user(phone)` | Finds the account, or creates it after verification |
+| `fn_set_full_name(user, name)` | Stores the name and sets `name_confirmed` |
 | `fn_otp_ttl_seconds()` | 300 — how long a code stays valid |
 | `fn_otp_resend_seconds()` | 60 — gap between two codes to the same number |
 | `fn_otp_max_attempts()` | 3 — wrong guesses before the code is burned |
 
 ## Sign-in
 
-Customers sign in with a phone number and a six-digit code sent over WhatsApp.
-There is no password anywhere in the flow.
+There is no sign-up form. A customer types a phone number, proves they can
+receive a code, and the account is created on the spot. Verifying the code *is*
+the registration.
 
 ```
-POST /api/auth/otp/request  { phone, purpose, fullName?, email? }
-POST /api/auth/otp/verify   { phone, code, fullName?, email? }
+POST /api/auth/otp/request  { phone }
+POST /api/auth/otp/verify   { phone, code }   → { token, needsName, user }
+POST /api/auth/name         { name }          Authorization: Bearer <token>
 GET  /api/me                Authorization: Bearer <token>
 ```
 
-`users.email` and `users.password_hash` are both nullable, and `users` carries
-a `phone_verified_at` that is set the first time a number is verified.
+The app shows the name form only when `needsName` comes back true. That flag is
+`users.name_confirmed` inverted, so a returning customer is never asked twice.
+The name is required, not optional — it is what the e-ticket and the attendance
+sheet are printed from.
 
-Phone numbers are stored as `62xxxxxxxxx`, so `+62 812-3456-7890`,
-`0812-3456-7890`, and `6281234567890` resolve to the same account.
+`users` therefore has no `password_hash` and no email requirement.
+
+### Phone numbers
+
+Stored as `628xxxxxxxxx` — thirteen digits, no `+`, no spaces. That is exactly
+what `+62 812-3456-7890`, `0812-3456-7890`, and `6281234567890` normalise to, so
+all three reach the same account.
+
+A `CHECK` constraint enforces the shape on both `users` and `otp_codes`. It
+earns its keep: the sample data once carried a twelve-digit number, which
+silently created a *second* account for Anindya instead of matching the first,
+and she was asked for her name on every sign-in.
 
 `fn_request_otp` enforces the rules that cost money if they are missing:
 
@@ -133,6 +148,9 @@ Phone numbers are stored as `62xxxxxxxxx`, so `+62 812-3456-7890`,
 
 Creating the account happens *after* verification, inside `fn_upsert_user`, so
 nobody can register a number they cannot receive a code on.
+
+`fn_set_full_name` records the name and flips `name_confirmed`, which is what
+stops the app asking again on the next sign-in.
 
 ## How overbooking is prevented
 
@@ -170,8 +188,11 @@ The app should call `fn_book_session`, not insert into `bookings` directly.
 | Branches | 8 |
 | Class templates | 8 weekly slots |
 | Sessions | 103, from 12 Oct 2026 through 9 Jan 2027 |
-| Customers | 13 + 1 admin, all phone-verified |
+| Customers | 13 + 1 admin, all phone-verified and already named |
 | Bookings | 239, including one full class with a 2-person waitlist |
+
+Seeded accounts never trigger the name form, so signing in with any of their
+numbers goes straight into the app.
 
 Passwords in the seed are all `password123`, hashed with `crypt()` from
 `pgcrypto`. They are only there so the sample data has a value in the column —

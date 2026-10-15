@@ -175,7 +175,6 @@ DECLARE
     b_id bigint;
     bk   bookings%ROWTYPE;
     c_id bigint := (SELECT id FROM users WHERE email = 'anindya@kranulo.com');
-    pts  integer;
 BEGIN
     SELECT id INTO b_id
     FROM bookings
@@ -184,12 +183,13 @@ BEGIN
     ORDER BY id DESC
     LIMIT 1;
 
-    SELECT loyalty_points INTO pts FROM users WHERE id = c_id;
     bk := fn_mark_attendance(b_id, true);
 
-    RAISE NOTICE '  -> % menjadi % ; poin % -> %',
-                 bk.code, bk.status, pts,
-                 (SELECT loyalty_points FROM users WHERE id = c_id);
+    IF bk.status <> 'Hadir' OR bk.checked_in_at IS NULL THEN
+        RAISE EXCEPTION 'GAGAL: absensi tidak tercatat';
+    END IF;
+    RAISE NOTICE '  -> % menjadi % pada %',
+                 bk.code, bk.status, bk.checked_in_at;
 END $$;
 
 \echo ''
@@ -223,11 +223,11 @@ LIMIT 5;
 \echo '=== 14. OTP: kode, satu kali pakai, dan batas percobaan ==='
 DO $$
 DECLARE
-    test_phone citext := '628990000001'::citext;
+    test_phone citext := '6289990000001'::citext;
     issued     record;
     first_code text;
 BEGIN
-    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+    SELECT * INTO issued FROM fn_request_otp(test_phone);
     first_code := issued.code;
 
     RAISE NOTICE '  -> kode % dibuat, berlaku % detik',
@@ -260,11 +260,11 @@ END $$;
 \echo '=== 15. OTP: terkunci setelah 3 kali salah ==='
 DO $$
 DECLARE
-    test_phone citext := '628990000002'::citext;
+    test_phone citext := '6289990000002'::citext;
     issued     record;
     hasil      text;
 BEGIN
-    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+    SELECT * INTO issued FROM fn_request_otp(test_phone);
 
     -- Tiga tebakan salah masih dijawab "invalid", semuanya dihitung.
     PERFORM fn_verify_otp(test_phone, '111111');
@@ -286,7 +286,7 @@ BEGIN
     -- Minta kode baru, tetapi jeda kirim-ulang 60 detik juga ikut ditegakkan.
     -- Mgeser created_at ke belakang supaya jeda kirim-ulang terlewati.
     BEGIN
-        SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+        SELECT * INTO issued FROM fn_request_otp(test_phone);
         RAISE EXCEPTION 'GAGAL: jeda kirim ulang tidak ditegakkan';
     EXCEPTION WHEN OTHERS THEN
         IF SQLERRM NOT LIKE 'Tunggu%' THEN RAISE; END IF;
@@ -298,7 +298,7 @@ BEGIN
      WHERE phone = test_phone;
 
     -- Kunci harus melepas begitu kode baru diterbitkan.
-    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+    SELECT * INTO issued FROM fn_request_otp(test_phone);
     IF fn_verify_otp(test_phone, issued.code) <> 'ok' THEN
         RAISE EXCEPTION 'GAGAL: kode baru setelah kunci tidak bisa dipakai';
     END IF;
@@ -314,37 +314,129 @@ SELECT left(phone::text, 5) || '…' AS nomor,
        attempts,
        consumed_at IS NOT NULL AS sudah_dipakai
 FROM otp_codes
-WHERE phone::text LIKE '62899000000%'
+WHERE phone::text LIKE '628999000000%'
 ORDER BY id DESC
 LIMIT 3;
 
 \echo ''
-\echo '=== 17. fn_upsert_user: akun baru vs akun lama ==='
+\echo '=== 17. fn_upsert_user: membuat akun di tengah alur masuk ==='
 DO $$
 DECLARE
-    baru  users%ROWTYPE;
-    lagi  users%ROWTYPE;
+    baru users%ROWTYPE;
+    lagi users%ROWTYPE;
 BEGIN
-    SELECT * INTO baru FROM fn_upsert_user('628990000003'::citext, 'Gita Maharani', NULL);
-    RAISE NOTICE '  -> dibuat  : % (terverifikasi %)',
-                 baru.full_name, (baru.phone_verified_at IS NOT NULL);
+    SELECT * INTO baru FROM fn_upsert_user('6289990000003'::citext);
 
-    -- Panggil lagi dengan nama berbeda: akun lama tidak boleh tertimpa.
-    SELECT * INTO lagi FROM fn_upsert_user('628990000003'::citext, 'Nama Baru', 'gita@mail.com');
-    IF lagi.id <> baru.id OR lagi.full_name <> 'Gita Maharani' THEN
-        RAISE EXCEPTION 'GAGAL: akun lama tertimpa';
+    IF baru.id IS NULL THEN
+        RAISE EXCEPTION 'GAGAL: akun tidak dibuat';
     END IF;
-    RAISE NOTICE '  -> dipakai ulang : nama tetap % , email dilengkapi %', lagi.full_name, lagi.email;
+    IF baru.name_confirmed THEN
+        RAISE EXCEPTION 'GAGAL: akun baru harusnya belum punya nama terkonfirmasi';
+    END IF;
+    RAISE NOTICE '  -> dibuat : % , perlu nama? %', baru.full_name, (NOT baru.name_confirmed);
+
+    -- Masuk kedua kalinya: akun yang sama, tidak ada duplikat.
+    SELECT * INTO lagi FROM fn_upsert_user('6289990000003'::citext);
+    IF lagi.id <> baru.id THEN
+        RAISE EXCEPTION 'GAGAL: muncul akun kedua untuk nomor yang sama';
+    END IF;
+    RAISE NOTICE '  -> masuk lagi : id sama, nama tetap %', lagi.full_name;
 END $$;
 
 \echo ''
-\echo '=== 18. Akun tanpa kata sandi tetap sah ==='
-SELECT role, full_name, phone,
-       email            IS NULL AS email_kosong,
-       password_hash    IS NULL AS tanpa_sandi,
+\echo '=== 18. fn_update_profile: nama disimpan sekali, lalu tidak diminta lagi ==='
+DO $$
+DECLARE
+    test_phone citext := '6289990000003'::citext;
+    baru       users%ROWTYPE;
+    tersimpan  users%ROWTYPE;
+BEGIN
+    SELECT * INTO baru FROM fn_upsert_user(test_phone);
+
+    -- Nama terlalu pendek harus ditolak.
+    BEGIN
+        PERFORM fn_update_profile(baru.id, 'Ab');
+        RAISE EXCEPTION 'GAGAL: nama 2 karakter seharusnya ditolak';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%minimal 3 karakter%' THEN RAISE; END IF;
+        RAISE NOTICE '  -> nama terlalu pendek ditolak';
+    END;
+
+    tersimpan := fn_update_profile(baru.id, '  Gita Maharani  ');
+
+    IF NOT tersimpan.name_confirmed THEN
+        RAISE EXCEPTION 'GAGAL: name_confirmed belum ditandai';
+    END IF;
+    IF tersimpan.full_name <> 'Gita Maharani' THEN
+        RAISE EXCEPTION 'GAGAL: nama tidak tersimpan / tidak dipangkas: %', tersimpan.full_name;
+    END IF;
+    RAISE NOTICE '  -> nama tersimpan : % , terkonfirmasi: %', tersimpan.full_name, tersimpan.name_confirmed;
+
+    -- Masuk lagi: fn_upsert_user harus melaporkan tidak perlu minta nama.
+    SELECT * INTO baru FROM fn_upsert_user(test_phone);
+    IF NOT baru.name_confirmed THEN
+        RAISE EXCEPTION 'GAGAL: nama diminta lagi padahal sudah diisi';
+    END IF;
+    RAISE NOTICE '  -> masuk lagi : perlu nama? %', (NOT baru.name_confirmed);
+END $$;
+
+\echo ''
+\echo '=== 19. fn_update_profile: email boleh kosong, diisi, lalu dihapus ==='
+DO $$
+DECLARE
+    test_phone citext := '6289990000003'::citext;
+    u          users%ROWTYPE;
+BEGIN
+    SELECT * INTO u FROM fn_upsert_user(test_phone);
+
+    -- Email tidak dikirim sama sekali (NULL) harus tidak mengubah apa pun.
+    u := fn_update_profile(u.id, 'Gita Maharani', NULL);
+    IF u.email IS NOT NULL THEN
+        RAISE EXCEPTION 'GAGAL: email ikut terisi tanpa diminta';
+    END IF;
+    RAISE NOTICE '  -> email belum diisi : %', (u.email IS NULL);
+
+    -- Diisi lewat ikon pensil.
+    u := fn_update_profile(u.id, NULL, 'gita@mail.com');
+    IF u.email::text <> 'gita@mail.com' THEN
+        RAISE EXCEPTION 'GAGAL: email tidak tersimpan: %', u.email;
+    END IF;
+    IF u.full_name <> 'Gita Maharani' THEN
+        RAISE EXCEPTION 'GAGAL: nama ikut berubah: %', u.full_name;
+    END IF;
+    RAISE NOTICE '  -> diisi : % , nama tetap %', u.email, u.full_name;
+
+    -- Format salah ditolak.
+    BEGIN
+        PERFORM fn_update_profile(u.id, NULL, 'bukan-email');
+        RAISE EXCEPTION 'GAGAL: format email salah seharusnya ditolak';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Format email%' THEN RAISE; END IF;
+        RAISE NOTICE '  -> format salah ditolak';
+    END;
+
+    -- Dikosongkan lagi dari ikon pensil.
+    u := fn_update_profile(u.id, NULL, '');
+    IF u.email IS NOT NULL THEN
+        RAISE EXCEPTION 'GAGAL: email tidak terhapus';
+    END IF;
+    RAISE NOTICE '  -> dihapus : email kosong lagi';
+END $$;
+
+\echo ''
+\echo '=== 20. Akun tanpa email dan tanpa kata sandi tetap sah ==='
+SELECT role, full_name, name_confirmed,
+       email             IS NULL AS email_kosong,
        phone_verified_at IS NOT NULL AS nomor_terverifikasi
 FROM users
-WHERE phone::text = '628990000003';
+WHERE phone::text = '6289990000003';
+
+\echo ''
+\echo '=== 21. Tidak ada kolom password_hash / loyalty_points ==='
+SELECT count(*) AS kolom_lama_yang_masih_ada
+FROM information_schema.columns
+WHERE table_name = 'users'
+  AND column_name IN ('password_hash', 'loyalty_points');
 
 \echo ''
 \echo 'Selesai - semua perubahan dibatalkan (ROLLBACK).'
