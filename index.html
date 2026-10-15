@@ -31,50 +31,25 @@
       <!-- ---------- Masuk ---------- -->
       <form class="auth__form" id="formLogin" novalidate aria-labelledby="loginTitle">
         <h1 class="auth__title" id="loginTitle">Selamat datang kembali</h1>
-        <p class="auth__sub">Masuk untuk melihat jadwal dan memesan kelas.</p>
+        <p class="auth__sub">Masukkan nomor WhatsApp, kami kirim kode OTP untuk masuk.</p>
 
         <div class="field-group">
-          <label class="field-label" for="loginId">Email atau No. WhatsApp</label>
+          <label class="field-label" for="loginPhone">No. WhatsApp</label>
           <div class="field">
-            <span class="field__icon" aria-hidden="true">✉</span>
-            <input type="text" id="loginId" name="loginId"
-                   autocomplete="username" placeholder="anindya@kranulo.com">
+            <span class="field__icon" aria-hidden="true">✆</span>
+            <input type="tel" id="loginPhone" name="loginPhone"
+                   autocomplete="tel" inputmode="tel"
+                   placeholder="0812-3456-7890">
           </div>
-          <p class="field__error" id="errLoginId" role="alert"></p>
+          <p class="field__error" id="errLoginPhone" role="alert"></p>
         </div>
 
-        <div class="field-group">
-          <label class="field-label" for="loginPass">Kata sandi</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">🔒</span>
-            <input type="password" id="loginPass" name="loginPass"
-                   autocomplete="current-password" placeholder="••••••••">
-            <button class="reveal" type="button" data-reveal="loginPass"
-                    aria-label="Tampilkan kata sandi" aria-pressed="false">👁</button>
-          </div>
-          <p class="field__error" id="errLoginPass" role="alert"></p>
-        </div>
+        <button class="btn btn--primary btn--block" type="submit">Kirim Kode OTP</button>
 
-        <div class="auth__row">
-          <label class="check">
-            <input type="checkbox" id="rememberMe" checked>
-            <span>Ingat saya</span>
-          </label>
-          <button class="linkish" type="button" id="forgotLink">Lupa kata sandi?</button>
-        </div>
-
-        <button class="btn btn--primary btn--block" type="submit">Masuk</button>
-
-        <div class="auth__sep"><span>atau lanjutkan dengan</span></div>
-
-        <div class="auth__social">
-          <button class="btn btn--social" type="button" data-provider="Google">
-            <span aria-hidden="true">G</span> Google
-          </button>
-          <button class="btn btn--social" type="button" data-provider="WhatsApp">
-            <span aria-hidden="true">◉</span> WhatsApp
-          </button>
-        </div>
+        <p class="auth__note">
+          Tidak perlu mengingat kata sandi. Kode hanya berlaku sekali dan
+          kedaluwarsa dalam 5 menit.
+        </p>
 
         <p class="auth__foot">
           Belum punya akun?
@@ -85,7 +60,7 @@
       <!-- ---------- Daftar ---------- -->
       <form class="auth__form" id="formRegister" novalidate aria-labelledby="registerTitle" hidden>
         <h1 class="auth__title" id="registerTitle">Buat akun baru</h1>
-        <p class="auth__sub">Satu akun untuk memesan kelas dan melacak sesi.</p>
+        <p class="auth__sub">Cukup nama dan nomor WhatsApp. Tanpa kata sandi.</p>
 
         <div class="field-group">
           <label class="field-label" for="regName">Nama lengkap</label>
@@ -98,46 +73,26 @@
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="regEmail">Email</label>
+          <label class="field-label" for="regPhone">No. WhatsApp</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">✆</span>
+            <input type="tel" id="regPhone" name="regPhone"
+                   autocomplete="tel" inputmode="tel"
+                   placeholder="0812-3456-7890">
+          </div>
+          <p class="field__error" id="errRegPhone" role="alert"></p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="regEmail">
+            Email <span class="field__hint">opsional — untuk invoice</span>
+          </label>
           <div class="field">
             <span class="field__icon" aria-hidden="true">✉</span>
             <input type="email" id="regEmail" name="regEmail"
                    autocomplete="email" placeholder="nama@email.com">
           </div>
           <p class="field__error" id="errRegEmail" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="regPhone">No. WhatsApp</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">✆</span>
-            <input type="tel" id="regPhone" name="regPhone"
-                   autocomplete="tel" placeholder="+62 812-3456-7890">
-          </div>
-          <p class="field__error" id="errRegPhone" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="regPass">Kata sandi</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">🔒</span>
-            <input type="password" id="regPass" name="regPass"
-                   autocomplete="new-password" placeholder="Minimal 6 karakter">
-            <button class="reveal" type="button" data-reveal="regPass"
-                    aria-label="Tampilkan kata sandi" aria-pressed="false">👁</button>
-          </div>
-          <div class="meter" aria-hidden="true"><span id="passMeter"></span></div>
-          <p class="field__error" id="errRegPass" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="regPass2">Ulangi kata sandi</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">🔒</span>
-            <input type="password" id="regPass2" name="regPass2"
-                   autocomplete="new-password" placeholder="Ketik ulang">
-          </div>
-          <p class="field__error" id="errRegPass2" role="alert"></p>
         </div>
 
         <div class="field-group">
@@ -154,6 +109,43 @@
         <p class="auth__foot">
           Sudah punya akun?
           <button class="linkish" type="button" data-goto="login">Login di sini</button>
+        </p>
+      </form>
+
+      <!-- ---------- Verifikasi OTP ---------- -->
+      <form class="auth__form" id="formOtp" novalidate aria-labelledby="otpTitle" hidden>
+        <h1 class="auth__title" id="otpTitle">Masukkan kode OTP</h1>
+        <p class="auth__sub">
+          Kode 6 angka dikirim ke WhatsApp
+          <strong id="otpPhone">—</strong>
+        </p>
+
+        <div class="field-group">
+          <div class="field field--otp">
+            <input type="text" id="otpCode" name="otpCode"
+                   inputmode="numeric" autocomplete="one-time-code"
+                   maxlength="6" placeholder="000000"
+                   aria-label="Kode OTP 6 angka">
+          </div>
+          <p class="field__error" id="errOtpCode" role="alert"></p>
+        </div>
+
+        <!-- Hanya muncul kalau server berjalan tanpa FONNTE_TOKEN -->
+        <div class="notice notice--demo" id="otpDemo" hidden>
+          <strong>Mode demo</strong>
+          <span>Kode OTP belum dikirim lewat WhatsApp. Gunakan kode di bawah ini.</span>
+          <code id="otpDemoCode">—</code>
+        </div>
+
+        <div class="otp-meta">
+          <span id="otpCountdown">Berlaku 5:00</span>
+          <button class="linkish" type="button" id="otpResend" disabled>Kirim ulang</button>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">Verifikasi</button>
+
+        <p class="auth__foot">
+          <button class="linkish" type="button" data-goto="back">Ganti nomor</button>
         </p>
       </form>
     </div>

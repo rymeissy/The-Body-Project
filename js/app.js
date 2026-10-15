@@ -930,31 +930,48 @@
 
   /* ======================================================================
      AUTH — gerbang sebelum masuk ke aplikasi
+     Login dan registrasi cukup nomor WhatsApp. Tidak ada kata sandi:
+     server mengirim kode OTP, lalu memverifikasinya.
      ====================================================================== */
   const authScreen = $('#authScreen');
   const appShell   = $('#appShell');
   const KEY        = 'tbp.auth';
   const KEY_USER   = 'tbp.user';
+  const KEY_TOKEN  = 'tbp.token';
 
   const formLogin    = $('#formLogin');
   const formRegister = $('#formRegister');
+  const formOtp      = $('#formOtp');
 
-  /* ---------- Perpindahan form (dipicu link silang) ---------- */
+  const AUTH_FORMS = { login: formLogin, register: formRegister, otp: formOtp };
+
+  /* ---------- Perpindahan form ---------- */
+  let authReturn = 'login';          // layar asal sebelum masuk ke OTP
+  let otpTimer   = null;
+  let otpPayload = null;             // { phone, purpose, fullName, email }
+
   function setAuthForm(which) {
-    const isReg = which === 'register';
+    const target = which === 'back' ? AUTH_FORMS[authReturn] : AUTH_FORMS[which];
+    if (!target) return;
 
-    formLogin.hidden = isReg;
-    formRegister.hidden = !isReg;
+    if (which === 'back') authReturn = 'login';
+
+    Object.keys(AUTH_FORMS).forEach(key => { AUTH_FORMS[key].hidden = key !== which; });
+
+    // Ganti layar berarti semua countdown lama tidak berlaku lagi.
+    if (which !== 'otp') stopCountdown();
 
     authScreen.scrollTop = 0;
-
-    const target = isReg ? formRegister : formLogin;
     const first = target.querySelector('input:not([type="checkbox"])');
     if (first) first.focus();
   }
 
   $$('[data-goto]').forEach(btn => {
-    btn.addEventListener('click', () => setAuthForm(btn.dataset.goto));
+    btn.addEventListener('click', () => {
+      const to = btn.dataset.goto;
+      // Kembali ke layar asal saat menekan "Ganti nomor".
+      setAuthForm(to === 'back' ? authReturn : to);
+    });
   });
 
   /* ---------- Penyimpanan sesi ---------- */
@@ -963,11 +980,12 @@
     catch { return null; }
   }
 
-  function saveSession(user, mode) {
-    const data = { user, mode, at: new Date().toISOString() };
+  function saveSession(user, token) {
+    const data = { user, token, mode: 'otp', at: new Date().toISOString() };
     try {
       localStorage.setItem(KEY, JSON.stringify(data));
       localStorage.setItem(KEY_USER, JSON.stringify(user));
+      if (token) localStorage.setItem(KEY_TOKEN, token);
     } catch { /* mode privat — abaikan */ }
     return data;
   }
@@ -976,6 +994,7 @@
     try {
       localStorage.removeItem(KEY);
       localStorage.removeItem(KEY_USER);
+      localStorage.removeItem(KEY_TOKEN);
     } catch { /* abaikan */ }
   }
 
@@ -1002,7 +1021,11 @@
       document.body.style.overflow = '';
       formLogin.reset();
       formRegister.reset();
-      setMeter('');
+      formOtp.reset();
+      stopCountdown();
+      otpPayload = null;
+      $('#otpDemo').hidden = true;
+      setAuthForm('login');
     }
   }
 
@@ -1041,21 +1064,9 @@
     if (sub) sub.textContent = 'Keluar dari ' + user.name;
   }
 
-  /* ---------- Tampilkan / sembunyikan kata sandi ---------- */
-  $$('[data-reveal]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const input = $('#' + btn.dataset.reveal);
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      btn.setAttribute('aria-pressed', String(show));
-      btn.setAttribute('aria-label', show ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
-      input.focus();
-    });
-  });
-
-  /* ---------- Validasi ---------- */
-  const RE_EMAIL  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const RE_PHONE  = /^(\+?62|0)[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,5}$/;
+/* ---------- Validasi ---------- */
+  const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const RE_PHONE = /^(?:\+?62|0)\d{8,14}$/;
 
   function setError(inputId, errId, message) {
     const input = $('#' + inputId);
@@ -1073,119 +1084,133 @@
     $$('.field', form).forEach(f => f.classList.remove('is-invalid'));
   }
 
-  /* ---------- Meter kekuatan kata sandi ---------- */
-  function setMeter(value) {
-    const meter = document.querySelector('.meter');
-    const bar   = $('#passMeter');
+  /** Buang spasi dan tanda hubung supaya validasi tidak repot-repot soal spasi. */
+  const digits = value => value.replace(/[\s\-().]/g, '');
 
-    if (!meter || !bar) return;
-
-    // Lebar & warna ditentukan CSS lewat atribut data-level.
-    // Inline style harus dikosongkan, kalau tidak ia mengalahkan CSS.
-    bar.style.width = '';
-
-    if (!value) {
-      meter.removeAttribute('data-level');
-      return;
-    }
-
-    let score = 0;
-    if (value.length >= 6) score++;
-    if (value.length >= 10) score++;
-    if (/[A-Z]/.test(value) && /\d/.test(value)) score++;
-    if (/[^\w\s]/.test(value)) score++;
-
-    meter.dataset.level = score <= 1 ? 'weak' : score === 2 ? 'medium' : 'strong';
+  function checkPhone(inputId, errId, label) {
+    const raw = digits($('#' + inputId).value);
+    if (!raw)          return setError(inputId, errId, label + ' wajib diisi.');
+    if (!RE_PHONE.test(raw)) return setError(inputId, errId,
+      'Nomor tidak valid. Contoh: 0812-3456-7890');
+    return true;
   }
 
-  $('#regPass').addEventListener('input', e => setMeter(e.target.value));
+  /* ---------- Panggil API ---------- */
+  async function api(path, body) {
+    let res;
+    try {
+      res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch {
+      throw new Error('Tidak bisa menghubungi server. Pastikan "node serve.js" sedang berjalan.');
+    }
 
-  /* ---------- Masuk ---------- */
-  formLogin.addEventListener('submit', e => {
+    let data = {};
+    try { data = await res.json(); } catch { /* respons non-JSON */ }
+
+    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan (' + res.status + ')');
+    return data;
+  }
+
+  /** Tampilkan status memuat pada tombol selama promise berjalan. */
+  async function withLoading(btn, label, action) {
+    const target = btn || $('button[type="submit"]', authScreen);
+    const original = target.textContent;
+    target.disabled = true;
+    target.textContent = label;
+
+    try {
+      await action();
+    } finally {
+      target.disabled = false;
+      target.textContent = original;
+    }
+  }
+
+  /* ---------- Countdown & kirim ulang ---------- */
+  function stopCountdown() {
+    if (otpTimer) { clearInterval(otpTimer); otpTimer = null; }
+    const resend = $('#otpResend');
+    if (resend) resend.disabled = true;
+  }
+
+  function startCountdown(seconds) {
+    stopCountdown();
+
+    let left = seconds;
+    const resend = $('#otpResend');
+    const label  = $('#otpCountdown');
+
+    // Kirim ulang harus dinonaktifkan di sisi klien juga, supaya kode tidak
+    // terkirim terlalu sering walau tombol sudah disabled.
+    resend.disabled = true;
+
+    const tick = () => {
+      const m = Math.floor(left / 60);
+      const s = left % 60;
+      label.textContent = 'Berlaku ' + m + ':' + String(s).padStart(2, '0');
+
+      if (left <= 0) {
+        clearInterval(otpTimer);
+        otpTimer = null;
+        resend.disabled = false;
+        label.textContent = 'Kode kadaluarsa';
+        return;
+      }
+      left -= 1;
+    };
+
+    tick();
+    otpTimer = setInterval(tick, 1000);
+  }
+
+  /* ---------- Masuk: nomor → OTP ---------- */
+  formLogin.addEventListener('submit', async e => {
     e.preventDefault();
     clearErrors(formLogin);
 
-    const id   = $('#loginId').value.trim();
-    const pass = $('#loginPass').value;
+    if (!checkPhone('loginPhone', 'errLoginPhone', 'No. WhatsApp')) return;
 
-    let ok = true;
-    const looksEmail = id.includes('@');
+    const phone = digits($('#loginPhone').value);
+    authReturn = 'login';
 
-    if (!id) {
-      ok = setError('loginId', 'errLoginId', 'Email atau nomor WhatsApp wajib diisi.');
-    } else if (looksEmail && !RE_EMAIL.test(id)) {
-      ok = setError('loginId', 'errLoginId', 'Format email tidak valid.');
-    } else if (!looksEmail && !RE_PHONE.test(id.replace(/[\s-]/g, ''))) {
-      ok = setError('loginId', 'errLoginId', 'Nomor WhatsApp tidak valid. Contoh: 081234567890');
-    }
-
-    if (!pass) {
-      ok = setError('loginPass', 'errLoginPass', 'Kata sandi wajib diisi.');
-    } else if (pass.length < 6) {
-      ok = setError('loginPass', 'errLoginPass', 'Kata sandi minimal 6 karakter.');
-    }
-
-    if (!ok) return;
-
-    // Simulasi verifikasi server
-    submitWithLoading(e.submitter, 'Memverifikasi…', () => {
-      const user = {
-        name: looksEmail ? CUSTOMER.name : id,
-        email: looksEmail ? id : CUSTOMER.email,
-        phone: looksEmail ? CUSTOMER.phone : id
-      };
-      saveSession(user, 'password');
-      gate();
-      toast('Selamat datang kembali, ' + user.name.split(' ')[0]);
+    await withLoading(e.submitter, 'Mengirim kode…', async () => {
+      try {
+        const res = await api('/api/auth/otp/request', { phone, purpose: 'login' });
+        showOtpScreen({ phone, purpose: 'login' }, res);
+      } catch (err) {
+        setError('loginPhone', 'errLoginPhone', err.message);
+      }
     });
   });
 
-  /* ---------- Daftar ---------- */
-  formRegister.addEventListener('submit', e => {
+  /* ---------- Daftar: nama + nomor → OTP ---------- */
+  formRegister.addEventListener('submit', async e => {
     e.preventDefault();
     clearErrors(formRegister);
 
     const name  = $('#regName').value.trim();
     const email = $('#regEmail').value.trim();
-    const phone = $('#regPhone').value.trim();
-    const pass  = $('#regPass').value;
-    const pass2 = $('#regPass2').value;
-    const agree = $('#regAgree').checked;
 
     let ok = true;
-
     if (!name) {
       ok = setError('regName', 'errRegName', 'Nama lengkap wajib diisi.');
     } else if (name.length < 3) {
       ok = setError('regName', 'errRegName', 'Nama terlalu pendek.');
     }
 
-    if (!email) {
-      ok = setError('regEmail', 'errRegEmail', 'Email wajib diisi.');
-    } else if (!RE_EMAIL.test(email)) {
+    if (!checkPhone('regPhone', 'errRegPhone', 'No. WhatsApp')) ok = false;
+
+    // Email opsional, tapi kalau diisi harus valid.
+    if (email && !RE_EMAIL.test(email)) {
       ok = setError('regEmail', 'errRegEmail', 'Format email tidak valid.');
     }
 
-    if (!phone) {
-      ok = setError('regPhone', 'errRegPhone', 'No. WhatsApp wajib diisi.');
-    } else if (!RE_PHONE.test(phone.replace(/[\s-]/g, ''))) {
-      ok = setError('regPhone', 'errRegPhone', 'Nomor tidak valid. Contoh: 081234567890');
-    }
-
-    if (!pass) {
-      ok = setError('regPass', 'errRegPass', 'Kata sandi wajib diisi.');
-    } else if (pass.length < 6) {
-      ok = setError('regPass', 'errRegPass', 'Minimal 6 karakter.');
-    }
-
-    if (pass2 !== pass) {
-      ok = setError('regPass2', 'errRegPass2',
-        pass2 ? 'Kata sandi tidak sama.' : 'Ulangi kata sandi.');
-    }
-
-    if (!agree) {
-      const err = $('#errRegAgree');
-      err.textContent = 'Anda harus menyetujui syarat dan ketentuan.';
+    if (!$('#regAgree').checked) {
+      $('#errRegAgree').textContent = 'Anda harus menyetujui syarat dan ketentuan.';
       ok = false;
     }
 
@@ -1195,56 +1220,112 @@
       return;
     }
 
-    submitWithLoading(e.submitter, 'Membuat akun…', () => {
-      const today = new Date().toLocaleDateString('id-ID',
-        { day: 'numeric', month: 'long', year: 'numeric' });
-      saveSession({ name, email, phone, since: today }, 'register');
-      gate();
-      toast('Akun berhasil dibuat. Selamat datang, ' + name.split(' ')[0]);
+    const phone = digits($('#regPhone').value);
+    authReturn = 'register';
+
+    await withLoading(e.submitter, 'Membuat akun…', async () => {
+      try {
+        const res = await api('/api/auth/otp/request', { phone, purpose: 'register' });
+        showOtpScreen({ phone, purpose: 'register', fullName: name, email }, res);
+      } catch (err) {
+        // Nomor yang sudah terdaftar diarahkan ke layar masuk, bukan error buta.
+        if (/terdaftar/i.test(err.message)) {
+          toast('Nomor sudah terdaftar. Silakan masuk.');
+          $('#loginPhone').value = $('#regPhone').value;
+          setAuthForm('login');
+          return;
+        }
+        setError('regPhone', 'errRegPhone', err.message);
+      }
     });
   });
 
-  /** Tampilkan status memuat pada tombol, lalu jalankan aksi. */
-  function submitWithLoading(btn, label, action) {
-    const target = btn || $('button[type="submit"]', authScreen);
-    const original = target.innerHTML;
-    target.disabled = true;
-    target.textContent = label;
-    setTimeout(() => {
-      target.disabled = false;
-      target.innerHTML = original;
-      action();
-    }, 700);
+  /* ---------- Tampilkan layar OTP ---------- */
+  function showOtpScreen(payload, res) {
+    otpPayload = payload;
+
+    $('#otpPhone').textContent = res.phone || payload.phone;
+    $('#otpCode').value = '';
+    $('#errOtpCode').textContent = '';
+    $('#otpCode').closest('.field').classList.remove('is-invalid');
+
+    const demo = $('#otpDemo');
+    if (res.demo && res.demo.code) {
+      $('#otpDemoCode').textContent = res.demo.code;
+      demo.hidden = false;
+    } else {
+      demo.hidden = true;
+    }
+
+    setAuthForm('otp');
+    startCountdown(res.ttl || 300);
   }
 
-  /* ---------- Masuk sosial ---------- */
-  $$('[data-provider]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const provider = btn.dataset.provider;
-      submitWithLoading(btn, 'Menghubungkan…', () => {
-        const user = provider === 'Google'
-          ? { name: CUSTOMER.name, email: CUSTOMER.email, phone: CUSTOMER.phone }
-          : { name: 'Anindya Kirana', email: CUSTOMER.email, phone: CUSTOMER.phone };
-        saveSession(user, provider.toLowerCase());
+  /* ---------- Verifikasi OTP ---------- */
+  formOtp.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearErrors(formOtp);
+
+    const code = $('#otpCode').value.replace(/\D/g, '');
+
+    if (!code) {
+      setError('otpCode', 'errOtpCode', 'Kode OTP wajib diisi.');
+      return;
+    }
+    if (code.length !== 6) {
+      setError('otpCode', 'errOtpCode', 'Kode OTP terdiri dari 6 angka.');
+      return;
+    }
+    if (!otpPayload) {
+      setError('otpCode', 'errOtpCode', 'Minta kode OTP dulu.');
+      return;
+    }
+
+    await withLoading(e.submitter, 'Memverifikasi…', async () => {
+      try {
+        const res = await api('/api/auth/otp/verify', Object.assign({}, otpPayload, { code }));
+        saveSession(res.user, res.token);
+        stopCountdown();
         gate();
-        toast('Berhasil masuk dengan ' + provider);
-      });
+        toast(otpPayload.purpose === 'register'
+          ? 'Akun berhasil dibuat. Selamat datang, ' + res.user.name.split(' ')[0]
+          : 'Selamat datang kembali, ' + res.user.name.split(' ')[0]);
+      } catch (err) {
+        setError('otpCode', 'errOtpCode', err.message);
+      }
     });
   });
 
-  /* ---------- Lupa kata sandi ---------- */
-  $('#forgotLink').addEventListener('click', () => {
-    const id = $('#loginId').value.trim();
-    toast(id
-      ? 'Tautan reset dikirim ke ' + id
-      : 'Isi email atau nomor WhatsApp terlebih dahulu');
+  /* ---------- Kirim ulang ---------- */
+  $('#otpResend').addEventListener('click', async function () {
+    if (!otpPayload) return;
+
+    this.disabled = true;
+    try {
+      const res = await api('/api/auth/otp/request', {
+        phone: otpPayload.phone,
+        purpose: otpPayload.purpose
+      });
+
+      showOtpScreen(otpPayload, res);
+      toast('Kode baru telah dikirim');
+    } catch (err) {
+      // Server menolak karena jeda belum habis — hitung ulang sisasannya.
+      const wait = parseInt((err.message.match(/\d+/) || [0])[0], 10);
+      startCountdown(wait || 60);
+      toast(err.message);
+    }
+  });
+
+  /* ---------- Input OTP: hanya angka, lengkap otomatis ---------- */
+  $('#otpCode').addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
   });
 
   /* ---------- Keluar ---------- */
   $('#logoutBtn').addEventListener('click', () => {
     clearSession();
     gate();
-    setAuthForm('login');
     toast('Anda telah keluar');
   });
 
