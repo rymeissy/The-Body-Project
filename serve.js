@@ -18,9 +18,19 @@ const crypto = require('crypto');
 const ROOT = __dirname;
 const PORT = Number(process.argv[2]) || 4173;
 
-// Rahasia disimpan di .env, yang sudah masuk .gitignore. Nilai di shell tetap
-// menang kalau keduanya ada.
-try { process.loadEnvFile(require('path').join(ROOT, '.env')); } catch { /* belum ada */ }
+// Rahasia disimpan di .env, yang sudah masuk .gitignore.
+//
+// process.loadEnvFile() menimpa nilai yang sudah ada di shell, jadi file-nya
+// dibaca manual: variabel yang sudah diset di shell tetap menang, .env hanya
+// mengisi sisanya. Itu yang membuatnya mudah ditimpa sementara saat dites,
+// misalnya $env:FONNTE_TOKEN="" untuk mengaktifkan mode demo.
+try {
+  const { parseEnv } = require('node:util');
+  const isi = parseEnv(fs.readFileSync(path.join(ROOT, '.env'), 'utf8'));
+  for (const [key, value] of Object.entries(isi)) {
+    if (!(key in process.env)) process.env[key] = value;
+  }
+} catch { /* .env belum ada — biarkan nilai bawaan */ }
 
 const DB = {
   host: process.env.PGHOST || 'localhost',
@@ -101,6 +111,11 @@ function issueToken(userId, days) {
    6281234567890 menunjuk ke akun yang sama.
    ============================================================================= */
 
+/* Mengubah apa pun yang diketik menjadi 628xxxxxxxxx, atau null kalau
+   bukan nomor ponsel Indonesia yang wajar. Aturan ini sama persis dengan
+   CHECK di kolom users.phone dan otp_codes.phone, jadi tidak mungkin nomor
+   lolos di satu tempat lalu ditolak di tempat lain — dan pesan error
+   database tidak pernah sampai ke user. */
 function normalisePhone(raw) {
   if (typeof raw !== 'string') return null;
 
@@ -114,7 +129,7 @@ function normalisePhone(raw) {
     digits = '62' + digits;
   }
 
-  if (!/^62\d{8,13}$/.test(digits)) return null;
+  if (!/^628[0-9]{10}$/.test(digits)) return null;
   return digits;
 }
 
@@ -200,25 +215,14 @@ async function route(req, res, url) {
   if (url === '/api/auth/otp/request' && req.method === 'POST') {
     const body = await readBody(req);
     const phone = normalisePhone(body.phone);
-    const purpose = body.purpose === 'register' ? 'register' : 'login';
 
     if (!phone) {
       return sendJson(res, 400, { error: 'Nomor WhatsApp tidak valid' });
     }
 
-    const { rows } = await pool.query(
-      'SELECT id FROM users WHERE phone = $1', [phone]);
-
-    // Jangan bocorkan apakah nomor terdaftar. Kode tetap dikirim, dan
-    // fn_upsert_user akan membuat akunnya saat kode terverifikasi.
-    if (purpose === 'register' && rows.length > 0) {
-      return sendJson(res, 409, { error: 'Nomor ini sudah terdaftar. Silakan masuk.' });
-    }
-
     let issued;
     try {
-      issued = await pool.query(
-        'SELECT * FROM fn_request_otp($1, $2)', [phone, purpose]);
+      issued = await pool.query('SELECT * FROM fn_request_otp($1)', [phone]);
     } catch (err) {
       return sendJson(res, 429, { error: err.message.replace(/^ERROR:\s*/, '') });
     }
@@ -236,7 +240,6 @@ async function route(req, res, url) {
       phone: maskPhone(phone),
       ttl,
       resendAfter: row.resend_after,
-      known: rows.length > 0,
       // Hanya diisi saat mode demo, yaitu FONNTE_TOKEN belum diset.
       demo: sent.mode === 'demo' ? { code: row.code } : undefined
     });
@@ -265,24 +268,60 @@ async function route(req, res, url) {
     }
 
     // fn_upsert_user returns the users composite, so pg spreads its columns
-    // across the row rather than nesting them.
+    // across the row rather than nesting them. It also creates the account on
+    // the spot — there is no sign-up form anywhere.
     const created = await pool.query(
-      'SELECT * FROM fn_upsert_user($1, $2, $3)',
-      [phone, String(body.fullName || '').slice(0, 120), body.email || null]);
+      'SELECT * FROM fn_upsert_user($1)', [phone]);
 
     const user = created.rows[0];
 
     return sendJson(res, 200, {
       ok: true,
       token: issueToken(user.id, 30),
+      // The app shows the name form once, then never again.
+      needsName: !user.name_confirmed,
       user: {
         id: user.id,
         name: user.full_name,
         phone: user.phone,
         email: user.email,
         tier: user.membership_tier,
-        points: user.loyalty_points,
         since: new Date(user.member_since).toLocaleDateString('id-ID',
+          { day: 'numeric', month: 'long', year: 'numeric' })
+      }
+    });
+  }
+
+  /* ---------- POST /api/auth/profile ----------
+     Dipakai dua kali: sekali setelah OTP untuk menyimpan nama, dan sekali
+     lagi dari ikon pensil di tab Profil. Satu endpoint untuk dua-duanya. */
+  if (url === '/api/auth/profile' && req.method === 'POST') {
+    const session = verifyToken((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+    if (!session) return sendJson(res, 401, { error: 'Sesi tidak valid' });
+
+    const body = await readBody(req);
+
+    // Kirim lastEmail sebagai penanda: tanpa itu, email yang tidak dikirim
+    // akan ikut terhapus. NULL berarti "jangan sentuh".
+    const untouched = !Object.prototype.hasOwnProperty.call(body, 'email');
+
+    let saved;
+    try {
+      saved = await pool.query('SELECT * FROM fn_update_profile($1, $2, $3)', [
+        session.id,
+        String(body.name || '').slice(0, 120),
+        untouched ? null : String(body.email || '').slice(0, 180)
+      ]);
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message.replace(/^ERROR:\s*/, '') });
+    }
+
+    const u = saved.rows[0];
+    return sendJson(res, 200, {
+      ok: true,
+      user: {
+        id: u.id, name: u.full_name, phone: u.phone, email: u.email,
+        since: new Date(u.member_since).toLocaleDateString('id-ID',
           { day: 'numeric', month: 'long', year: 'numeric' })
       }
     });
@@ -296,7 +335,8 @@ async function route(req, res, url) {
     if (!session) return sendJson(res, 401, { error: 'Sesi tidak valid' });
 
     const { rows } = await pool.query(
-      'SELECT id, full_name, phone, email FROM users WHERE id = $1', [session.id]);
+      'SELECT id, full_name, phone, email, member_since FROM users WHERE id = $1',
+      [session.id]);
 
     if (!rows.length) return sendJson(res, 401, { error: 'Akun tidak ditemukan' });
 
@@ -305,7 +345,7 @@ async function route(req, res, url) {
       ok: true,
       user: {
         id: u.id, name: u.full_name, phone: u.phone, email: u.email,
-        since: new Date().toLocaleDateString('id-ID',
+        since: new Date(u.member_since).toLocaleDateString('id-ID',
           { day: 'numeric', month: 'long', year: 'numeric' })
       }
     });
