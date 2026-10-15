@@ -280,6 +280,9 @@ a { color: var(--green-700); }
   font-size: 12px;
   line-height: 1.5;
 }
+/* display:grid di atas mengalahkan aturan [hidden] bawaan browser, jadi
+   harus ditegaskan ulang di sini. */
+.notice[hidden] { display: none; }
 .notice--demo {
   background: var(--cream-100);
   border: 1px dashed var(--gold-600);

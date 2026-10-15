@@ -18,6 +18,10 @@ const crypto = require('crypto');
 const ROOT = __dirname;
 const PORT = Number(process.argv[2]) || 4173;
 
+// Rahasia disimpan di .env, yang sudah masuk .gitignore. Nilai di shell tetap
+// menang kalau keduanya ada.
+try { process.loadEnvFile(require('path').join(ROOT, '.env')); } catch { /* belum ada */ }
+
 const DB = {
   host: process.env.PGHOST || 'localhost',
   port: Number(process.env.PGPORT || 5433),
@@ -146,11 +150,17 @@ async function sendOtp(phone, code, ttlSeconds) {
   }
 
   const body = await res.json().catch(() => ({}));
-  if (body.status !== 'success') {
-    return { sent: false, mode: 'error', detail: body.reason || 'Pengiriman ditolak Fonnte' };
+  // Sukses datang sebagai boolean true, bukan string "success".
+  if (body.status === true || body.status === 'success') {
+    return { sent: true, mode: 'whatsapp' };
   }
 
-  return { sent: true, mode: 'whatsapp' };
+  // Fonnte melaporkan alasan per nomor di detail.target, dan itu yang paling
+  // perlu dilihat user: device belum connect, kuota habis, atau nomor salah.
+  const target = body.detail && Array.isArray(body.detail.target) ? body.detail.target[0] : null;
+  const reason = (target && target.reason) || body.reason || 'Pengiriman ditolak Fonnte';
+
+  return { sent: false, mode: 'error', detail: reason };
 }
 
 /* =============================================================================
