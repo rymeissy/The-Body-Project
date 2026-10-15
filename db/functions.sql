@@ -289,8 +289,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION fn_mark_attendance(
     p_booking_id  bigint,
-    p_attended    boolean,
-    p_points      integer DEFAULT 10
+    p_attended    boolean
 ) RETURNS bookings
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -306,10 +305,6 @@ BEGIN
            checked_in_at = now()
      WHERE id = p_booking_id
     RETURNING * INTO b;
-
-    IF p_attended THEN
-        UPDATE users SET loyalty_points = loyalty_points + p_points WHERE id = b.customer_id;
-    END IF;
 
     RETURN b;
 END;
@@ -358,6 +353,54 @@ END;
 $$;
 
 -- -----------------------------------------------------------------------------
+-- Edit the profile from the Profil tab.
+--
+-- Both fields are optional so a customer can add just an email, or just fix a
+-- name, without touching the other. For email there are three cases:
+--   NULL  = not sent, leave as it is
+--   ''    = sent empty, clear it
+--   value = set it
+-- A blank email clears it — the account is reachable by phone number alone,
+-- so email is never required.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION fn_update_profile(
+    p_user_id bigint,
+    p_name    text,
+    p_email   citext DEFAULT NULL
+) RETURNS users
+LANGUAGE plpgsql AS $$
+DECLARE
+    new_name  text   := NULLIF(btrim(coalesce(p_name, '')), '');
+    new_email citext := NULLIF(btrim(coalesce(p_email::text, '')), '');
+    saved     users%ROWTYPE;
+BEGIN
+    IF new_name IS NOT NULL AND length(new_name) < 3 THEN
+        RAISE EXCEPTION 'Nama lengkap minimal 3 karakter';
+    END IF;
+
+    IF new_email IS NOT NULL AND new_email::text !~ '^[^@\s]+@[^@\s]+\.[^@\s]{2,}$' THEN
+        RAISE EXCEPTION 'Format email tidak valid';
+    END IF;
+
+    UPDATE users
+       SET full_name = COALESCE(new_name, full_name),
+           email     = CASE WHEN p_email IS NULL THEN email ELSE new_email END,
+           -- punya nama berarti sudah mengetahuinya sendiri; inilah yang
+           -- menghentikan aplikasi menanyakan nama lagi di masuk berikutnya.
+           name_confirmed = name_confirmed OR (new_name IS NOT NULL)
+     WHERE id = p_user_id
+    RETURNING * INTO saved;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Pengguna % tidak ditemukan', p_user_id;
+    END IF;
+
+    RETURN saved;
+END;
+$$;
+
+-- -----------------------------------------------------------------------------
 -- Roll up finished sessions and release the calendar.
 -- -----------------------------------------------------------------------------
 
@@ -391,18 +434,18 @@ CREATE OR REPLACE FUNCTION fn_otp_max_attempts()      RETURNS integer LANGUAGE s
 -- -----------------------------------------------------------------------------
 -- Issue a code.
 --
---   p_phone    already normalised to 62xxxxxxxxx
---   p_purpose  'login' or 'register'
+--   p_phone  already normalised to 62xxxxxxxxx
 --
 -- Returns the six-digit code so the caller can put it in a WhatsApp message.
 -- The code is never stored in the clear — only crypt() of it, with a per-row
 -- salt, the same as a password hash.
+--
+-- There is only one purpose now: proving you own the number. Whether an
+-- account already exists is decided later, in fn_upsert_user.
 -- -----------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION fn_request_otp(
-    p_phone   citext,
-    p_purpose text DEFAULT 'login'
-) RETURNS TABLE (code text, expires_at timestamptz, resend_after int)
+CREATE OR REPLACE FUNCTION fn_request_otp(p_phone citext)
+RETURNS TABLE (code text, expires_at timestamptz, resend_after int)
 LANGUAGE plpgsql AS $$
 DECLARE
     last_sent  timestamptz;
@@ -430,10 +473,9 @@ BEGIN
 
     new_code := lpad((floor(random() * 1000000))::integer::text, 6, '0');
 
-    INSERT INTO otp_codes (phone, code_hash, purpose, expires_at)
+    INSERT INTO otp_codes (phone, code_hash, expires_at)
     VALUES (p_phone,
             crypt(new_code, gen_salt('bf', 6)),
-            p_purpose,
             now() + make_interval(secs => fn_otp_ttl_seconds()))
     RETURNING otp_codes.expires_at INTO new_expiry;
 
@@ -493,16 +535,17 @@ $$;
 -- -----------------------------------------------------------------------------
 -- Find or create the account behind a verified number.
 --
--- Verification has already happened by the time this runs, so creating on the
--- fly is safe: nobody can reach it without a code they received on this
--- number.
+-- This runs only after fn_verify_otp accepted a code, so creating on the fly
+-- is safe: nobody can reach it without having received a message on this
+-- number. There is no sign-up form anywhere in the product.
+--
+-- A fresh account gets a placeholder name and name_confirmed = false, which
+-- is what makes the app ask for the real name once. Returning customers keep
+-- whatever they typed last time.
 -- -----------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION fn_upsert_user(
-    p_phone citext,
-    p_name  text,
-    p_email citext DEFAULT NULL
-) RETURNS users
+CREATE OR REPLACE FUNCTION fn_upsert_user(p_phone citext)
+RETURNS users
 LANGUAGE plpgsql AS $$
 DECLARE
     found_user users%ROWTYPE;
@@ -510,21 +553,14 @@ BEGIN
     SELECT * INTO found_user FROM users WHERE phone = p_phone FOR UPDATE;
 
     IF FOUND THEN
-        -- Fill in whatever was missing the first time round.
-        UPDATE users
-           SET full_name = CASE WHEN full_name = '' THEN p_name ELSE full_name END,
-               email     = COALESCE(email, p_email),
-               phone_verified_at = now()
+        UPDATE users SET phone_verified_at = now()
          WHERE id = found_user.id
         RETURNING * INTO found_user;
         RETURN found_user;
     END IF;
 
-    INSERT INTO users (full_name, email, phone, phone_verified_at)
-    VALUES (COALESCE(NULLIF(trim(p_name), ''), 'Pelanggan ' || right(p_phone, 4)),
-            p_email,
-            p_phone,
-            now())
+    INSERT INTO users (full_name, name_confirmed, phone, phone_verified_at)
+    VALUES ('Pelanggan ' || right(p_phone, 4), false, p_phone, now())
     RETURNING * INTO found_user;
 
     RETURN found_user;

@@ -105,32 +105,31 @@ INSERT INTO instructors (name, role_title, email) VALUES
 -- -----------------------------------------------------------------------------
 
 -- The demo customer from js/data.js (CUSTOMER).
-INSERT INTO users (role, full_name, email, phone, password_hash, member_since, membership_tier, loyalty_points)
-VALUES ('customer', 'Anindya Kirana', 'anindya@kranulo.com', '+628123457890',
-        crypt('password123', gen_salt('bf')), '2026-05-05', 'Pengguna / Staff', 340);
+INSERT INTO users (role, full_name, name_confirmed, email, phone, member_since, membership_tier)
+VALUES ('customer', 'Anindya Kirana', true, 'anindya@kranulo.com', '6281234567890',
+        '2026-05-05', 'Pengguna / Staff');
 
 -- Extra customers so the capacity figures are not all zero.
-INSERT INTO users (role, full_name, email, phone, password_hash, member_since, membership_tier) VALUES
-    ('customer', 'Ratu Yuri Meissy',  'ratuyuri@binus.ac.id',  '+628115551001', crypt('password123', gen_salt('bf')), '2026-04-12', 'Pengguna / Staff'),
-    ('customer', 'Dimas Rachman Hakim','dimas@binus.ac.id',     '+628115551002', crypt('password123', gen_salt('bf')), '2026-06-02', 'Pengguna / Staff'),
-    ('customer', 'Abdul Hafizh',     'hafizh@binus.ac.id',     '+628115551003', crypt('password123', gen_salt('bf')), '2026-07-19', 'Pengguna / Staff'),
-    ('customer', 'Sarah Melinda',    'sarah.melinda@mail.com', '+628115551004', crypt('password123', gen_salt('bf')), '2026-05-28', 'Pengguna / Staff'),
-    ('customer', 'Bagas Prakoso',    'bagas@mail.com',        '+628115551005', crypt('password123', gen_salt('bf')), '2026-08-14', 'Pengguna / Staff'),
-    ('customer', 'Nadia Puspita',    'nadia.puspita@mail.com','+628115551006', crypt('password123', gen_salt('bf')), '2026-09-01', 'Pengguna / Staff'),
-    ('customer', 'Rizky Firmansyah', 'rizky@mail.com',        '+628115551007', crypt('password123', gen_salt('bf')), '2026-06-23', 'Pengguna / Staff'),
-    ('customer', 'Bagas Wicaksono', 'wicak@mail.com',        '+628115551008', crypt('password123', gen_salt('bf')), '2026-10-03', 'Pengguna / Staff'),
-    ('customer', 'Fajar Nugroho',    'fajar@mail.com',        '+628115551009', crypt('password123', gen_salt('bf')), '2026-07-30', 'Pengguna / Staff'),
-    ('customer', 'Dewi Lestari',     'dewi@mail.com',         '+628115551010', crypt('password123', gen_salt('bf')), '2026-05-16', 'Pengguna / Staff'),
-    ('customer', 'Yoga Pratama',     'yoga@mail.com',         '+628115551011', crypt('password123', gen_salt('bf')), '2026-09-10', 'Pengguna / Staff'),
-    ('customer', 'Intan Permata',    'intan@mail.com',        '+628115551012', crypt('password123', gen_salt('bf')), '2026-08-21', 'Pengguna / Staff');
+INSERT INTO users (role, full_name, name_confirmed, email, phone, member_since, membership_tier) VALUES
+    ('customer', 'Ratu Yuri Meissy',  true, 'ratuyuri@binus.ac.id',  '6281155551001', '2026-04-12', 'Pengguna / Staff'),
+    ('customer', 'Dimas Rachman Hakim',true, 'dimas@binus.ac.id',     '6281155551002', '2026-06-02', 'Pengguna / Staff'),
+    ('customer', 'Abdul Hafizh',      true, 'hafizh@binus.ac.id',     '6281155551003', '2026-07-19', 'Pengguna / Staff'),
+    ('customer', 'Sarah Melinda',     true, 'sarah.melinda@mail.com', '6281155551004', '2026-05-28', 'Pengguna / Staff'),
+    ('customer', 'Bagas Prakoso',     true, 'bagas@mail.com',        '6281155551005', '2026-08-14', 'Pengguna / Staff'),
+    ('customer', 'Nadia Puspita',     true, 'nadia.puspita@mail.com','6281155551006', '2026-09-01', 'Pengguna / Staff'),
+    ('customer', 'Rizky Firmansyah',  true, 'rizky@mail.com',        '6281155551007', '2026-06-23', 'Pengguna / Staff'),
+    ('customer', 'Bagas Wicaksono',   true, 'wicak@mail.com',        '6281155551008', '2026-10-03', 'Pengguna / Staff'),
+    ('customer', 'Fajar Nugroho',     true, 'fajar@mail.com',        '6281155551009', '2026-07-30', 'Pengguna / Staff'),
+    ('customer', 'Dewi Lestari',      true, 'dewi@mail.com',         '6281155551010', '2026-05-16', 'Pengguna / Staff'),
+    ('customer', 'Yoga Pratama',      true, 'yoga@mail.com',         '6281155551011', '2026-09-10', 'Pengguna / Staff'),
+    ('customer', 'Intan Permata',     true, 'intan@mail.com',        '6281155551012', '2026-08-21', 'Pengguna / Staff');
 
-INSERT INTO users (role, full_name, email, phone, password_hash, membership_tier)
-VALUES ('admin', 'Admin The Body Project', 'admin@tbp.id', '+628110000001',
-        crypt('password123', gen_salt('bf')), 'Staff');
+INSERT INTO users (role, full_name, name_confirmed, email, phone, membership_tier)
+VALUES ('admin', 'Admin The Body Project', true, 'admin@tbp.id', '6281199999999', 'Staff');
 
--- Seeded accounts are already phone-verified, so any of them can sign in with
--- their number and receive an OTP. No password is kept for them in practice —
--- the hash above is only there so the column has a value in the sample data.
+-- Seeded accounts are already phone-verified and already named, so signing in
+-- with any of their numbers goes straight into the app — the name form never
+-- appears for them.
 UPDATE users SET phone_verified_at = now();
 
 -- -----------------------------------------------------------------------------

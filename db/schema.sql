@@ -93,9 +93,16 @@ CREATE TABLE instructors (
 -- -----------------------------------------------------------------------------
 -- Accounts
 --
--- Customers sign in with a phone number and a one-time code, so email and
--- password_hash are optional. A row with neither phone_verified_at nor a
--- password cannot have signed in yet.
+-- There is no sign-up form. A customer types a phone number, proves they can
+-- receive a code, and the account is created on the spot by fn_upsert_user.
+-- The app then asks for a name exactly once — name_confirmed records whether
+-- that has happened yet, so a returning customer is never asked again.
+--
+-- phone is stored as 628xxxxxxxxx: no '+', no spaces, thirteen digits.
+-- That is exactly what the server normalises 0812-3456-7890 into. The CHECK
+-- below enforces it, and it earns its keep — the sample data once carried a
+-- twelve-digit number, which silently created a second account for the same
+-- person instead of matching the first.
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE users (
@@ -103,13 +110,13 @@ CREATE TABLE users (
     role              text        NOT NULL DEFAULT 'customer'
                                     CHECK (role IN ('customer', 'admin')),
     full_name         text        NOT NULL,
+    name_confirmed    boolean     NOT NULL DEFAULT false,
     email             citext      UNIQUE,
-    phone             citext      NOT NULL UNIQUE,
-    password_hash     text,
+    phone             citext      NOT NULL UNIQUE
+                                CHECK (phone::text ~ '^628[0-9]{10}$'),
     phone_verified_at timestamptz,
     member_since      date        NOT NULL DEFAULT CURRENT_DATE,
     membership_tier   text,
-    loyalty_points    integer     NOT NULL DEFAULT 0 CHECK (loyalty_points >= 0),
     created_at        timestamptz NOT NULL DEFAULT now(),
     updated_at        timestamptz NOT NULL DEFAULT now()
 );
@@ -117,17 +124,16 @@ CREATE TABLE users (
 -- -----------------------------------------------------------------------------
 -- One-time codes
 --
--- Only the hash is stored. Sending an SMS costs money, so the table also
+-- Only the hash is stored. Sending a message costs money, so the table also
 -- carries the rate limiting: fn_request_otp refuses a second code within
 -- fn_otp_resend_seconds, and fn_verify_otp locks out after a few wrong guesses.
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE otp_codes (
     id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    phone       citext     NOT NULL,
+    phone       citext     NOT NULL
+                            CHECK (phone::text ~ '^628[0-9]{10}$'),
     code_hash   text       NOT NULL,
-    purpose     text       NOT NULL DEFAULT 'login'
-                           CHECK (purpose IN ('login', 'register')),
     expires_at  timestamptz NOT NULL,
     attempts    smallint   NOT NULL DEFAULT 0 CHECK (attempts >= 0),
     consumed_at timestamptz,
@@ -392,7 +398,6 @@ SELECT
     u.phone,
     u.member_since,
     u.membership_tier,
-    u.loyalty_points,
     COALESCE(SUM(cp.remaining_sessions) FILTER (WHERE cp.status = 'Aktif'), 0)::integer AS sessions_left,
     COUNT(b.id) FILTER (WHERE b.status IN ('Terjual', 'Hadir', 'Tidak Hadir'))::integer AS sessions_booked
 FROM users u
