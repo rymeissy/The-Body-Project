@@ -219,7 +219,134 @@ WHERE customer_name = 'Anindya Kirana'
 ORDER BY starts_at DESC
 LIMIT 5;
 
-ROLLBACK;
+\echo ''
+\echo '=== 14. OTP: kode, satu kali pakai, dan batas percobaan ==='
+DO $$
+DECLARE
+    test_phone citext := '628990000001'::citext;
+    issued     record;
+    first_code text;
+BEGIN
+    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+    first_code := issued.code;
+
+    RAISE NOTICE '  -> kode % dibuat, berlaku % detik',
+                 first_code, ceil(extract(epoch FROM (issued.expires_at - now())));
+
+    IF first_code !~ '^\d{6}$' THEN
+        RAISE EXCEPTION 'GAGAL: kode bukan 6 angka';
+    END IF;
+
+    -- Salah harus ditolak.
+    IF fn_verify_otp(test_phone, '000000') <> 'invalid' THEN
+        RAISE EXCEPTION 'GAGAL: kode salah seharusnya invalid';
+    END IF;
+    RAISE NOTICE '  -> kode salah ditolak';
+
+    -- Benar harus diterima.
+    IF fn_verify_otp(test_phone, first_code) <> 'ok' THEN
+        RAISE EXCEPTION 'GAGAL: kode benar ditolak';
+    END IF;
+    RAISE NOTICE '  -> kode benar diterima';
+
+    -- Satu kali pakai: kode yang sama tidak boleh bisa dipakai lagi.
+    IF fn_verify_otp(test_phone, first_code) <> 'invalid' THEN
+        RAISE EXCEPTION 'GAGAL: kode terpakai dua kali';
+    END IF;
+    RAISE NOTICE '  -> kode hanya berlaku sekali';
+END $$;
+
+\echo ''
+\echo '=== 15. OTP: terkunci setelah 3 kali salah ==='
+DO $$
+DECLARE
+    test_phone citext := '628990000002'::citext;
+    issued     record;
+    hasil      text;
+BEGIN
+    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+
+    -- Tiga tebakan salah masih dijawab "invalid", semuanya dihitung.
+    PERFORM fn_verify_otp(test_phone, '111111');
+    PERFORM fn_verify_otp(test_phone, '222222');
+    hasil := fn_verify_otp(test_phone, '333333');
+
+    IF hasil <> 'invalid' THEN
+        RAISE EXCEPTION 'GAGAL: percobaan ke-3 seharusnya masih invalid, dapat %', hasil;
+    END IF;
+
+    -- Tebakan keempat ditolak outright dan kodenya hangus.
+    hasil := fn_verify_otp(test_phone, '444444');
+    IF hasil <> 'locked' THEN
+        RAISE EXCEPTION 'GAGAL: percobaan ke-4 seharusnya locked, dapat %', hasil;
+    END IF;
+
+    RAISE NOTICE '  -> terkunci setelah % percobaan salah', fn_otp_max_attempts();
+
+    -- Minta kode baru, tetapi jeda kirim-ulang 60 detik juga ikut ditegakkan.
+    -- Mgeser created_at ke belakang supaya jeda kirim-ulang terlewati.
+    BEGIN
+        SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+        RAISE EXCEPTION 'GAGAL: jeda kirim ulang tidak ditegakkan';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE 'Tunggu%' THEN RAISE; END IF;
+        RAISE NOTICE '  -> jeda kirim ulang % detik ditegakkan', fn_otp_resend_seconds();
+    END;
+
+    UPDATE otp_codes
+       SET created_at = now() - make_interval(secs => fn_otp_resend_seconds() + 5)
+     WHERE phone = test_phone;
+
+    -- Kunci harus melepas begitu kode baru diterbitkan.
+    SELECT * INTO issued FROM fn_request_otp(test_phone, 'login');
+    IF fn_verify_otp(test_phone, issued.code) <> 'ok' THEN
+        RAISE EXCEPTION 'GAGAL: kode baru setelah kunci tidak bisa dipakai';
+    END IF;
+    RAISE NOTICE '  -> kode baru setelah terkunci tetap bisa dipakai';
+END $$;
+
+\echo ''
+\echo '=== 16. OTP: hanya hash yang tersimpan ==='
+-- Tidak ada kolom code di tabel ini sama sekali — kodenya hanya ada di hash.
+SELECT left(phone::text, 5) || '…' AS nomor,
+       code_hash LIKE '$2%'  AS format_bcrypt,
+       length(code_hash)     AS panjang,
+       attempts,
+       consumed_at IS NOT NULL AS sudah_dipakai
+FROM otp_codes
+WHERE phone::text LIKE '62899000000%'
+ORDER BY id DESC
+LIMIT 3;
+
+\echo ''
+\echo '=== 17. fn_upsert_user: akun baru vs akun lama ==='
+DO $$
+DECLARE
+    baru  users%ROWTYPE;
+    lagi  users%ROWTYPE;
+BEGIN
+    SELECT * INTO baru FROM fn_upsert_user('628990000003'::citext, 'Gita Maharani', NULL);
+    RAISE NOTICE '  -> dibuat  : % (terverifikasi %)',
+                 baru.full_name, (baru.phone_verified_at IS NOT NULL);
+
+    -- Panggil lagi dengan nama berbeda: akun lama tidak boleh tertimpa.
+    SELECT * INTO lagi FROM fn_upsert_user('628990000003'::citext, 'Nama Baru', 'gita@mail.com');
+    IF lagi.id <> baru.id OR lagi.full_name <> 'Gita Maharani' THEN
+        RAISE EXCEPTION 'GAGAL: akun lama tertimpa';
+    END IF;
+    RAISE NOTICE '  -> dipakai ulang : nama tetap % , email dilengkapi %', lagi.full_name, lagi.email;
+END $$;
+
+\echo ''
+\echo '=== 18. Akun tanpa kata sandi tetap sah ==='
+SELECT role, full_name, phone,
+       email            IS NULL AS email_kosong,
+       password_hash    IS NULL AS tanpa_sandi,
+       phone_verified_at IS NOT NULL AS nomor_terverifikasi
+FROM users
+WHERE phone::text = '628990000003';
 
 \echo ''
 \echo 'Selesai - semua perubahan dibatalkan (ROLLBACK).'
+
+ROLLBACK;
