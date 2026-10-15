@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tbp-postgres
+    environment:
+      POSTGRES_USER: tbp
+      POSTGRES_PASSWORD: tbp_dev_password
+      POSTGRES_DB: the_body_project
+      TZ: Asia/Jakarta
+      PGTZ: Asia/Jakarta
+    ports:
+      - "5433:5432"
+    volumes:
+      - tbp_pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./functions.sql:/docker-entrypoint-initdb.d/02_functions.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/03_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tbp -d the_body_project"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tbp_pgdata:
