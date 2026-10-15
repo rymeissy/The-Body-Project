@@ -1,0 +1,24 @@
+{
+  "name": "the-body-project",
+  "version": "1.0.0",
+  "description": "Mobile web application for booking Pilates classes at Studio Pilates The Body Project.",
+  "main": "serve.js",
+  "scripts": {
+    "start": "node serve.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rymeissy/The-Body-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rymeissy/The-Body-Project/issues"
+  },
+  "homepage": "https://github.com/rymeissy/The-Body-Project#readme",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
