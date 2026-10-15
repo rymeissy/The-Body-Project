@@ -20,11 +20,11 @@ INSERT INTO class_types (code, label, sort_order) VALUES
     ('cadillac', 'Cadillac',  3),
     ('prenatal', 'Prenatal',  4);
 
-INSERT INTO payment_methods (code, label, description, icon) VALUES
-    ('qris',  'QRIS',            'Scan QR di kasir',      '▦'),
-    ('bca',   'BCA Virtual Acct', 'Transfer bank',        '◫'),
-    ('gopay', 'GoPay / OVO',     'Dompet digital',       '◉'),
-    ('card',  'Kartu Kredit',     'Visa / Mastercard',    '▤');
+INSERT INTO payment_methods (code, label, description) VALUES
+    ('qris',  'QRIS',            'Scan QR di kasir'),
+    ('bca',   'BCA Virtual Acct', 'Transfer bank'),
+    ('gopay', 'GoPay / OVO',     'Dompet digital'),
+    ('card',  'Kartu Kredit',     'Visa / Mastercard');
 
 INSERT INTO class_policies (body, sort_order) VALUES
     ('Pembatalan gratis hingga H-3 jam sebelum kelas dimulai.', 1),
@@ -46,32 +46,34 @@ INSERT INTO branches (code, name, area, address, phone, opens_at, closes_at, dis
     ('bekasi',         'Bekasi',            'Bekasi',             'Jl. Ahmad Yani No. 65, Bekasi',                                  '+62 21 0000 0007', '06:30', '20:30', 21.30, false),
     ('tangerang',      'Tangerang Selatan',  'Tangerang Selatan',  'Jl. BSD Utama No. 1, BSD City, Tangerang Selatan',               '+62 21 0000 0008', '06:30', '21:00', 28.60, false);
 
-INSERT INTO branch_facilities (branch_id, icon, label)
-SELECT b.id, f.icon, f.label
+-- Only the label is stored. The glyph shown on the facility chip is chosen by
+-- the front-end, not by the database.
+INSERT INTO branch_facilities (branch_id, label)
+SELECT b.id, f.label
 FROM (VALUES
-    ('senopati',       '⊞', '10 Reformer Beds'),
-    ('senopati',       '◫', '2 Private Suites'),
-    ('senopati',       '⚑', 'Valet Parking'),
-    ('senopati',       '◠', 'Rainforest Shower'),
-    ('simatupang',     '⊞', '6 Reformer Beds'),
-    ('simatupang',     '⚑', 'Valet Parking'),
-    ('kemang',         '⊞', '6 Reformer Beds'),
-    ('kemang',         '◫', '1 Private Suite'),
-    ('kemang',         '⚑', 'Free Parking'),
-    ('grandindonesia', '⊞', '8 Reformer Beds'),
-    ('grandindonesia', '◫', '2 Private Suites'),
-    ('grandindonesia', '⚑', 'Valet Parking'),
-    ('pik',            '⊞', '5 Reformer Beds'),
-    ('pik',            '⚑', 'Free Parking'),
-    ('sunter',         '⊞', '4 Reformer Beds'),
-    ('sunter',         '◫', '1 Private Suite'),
-    ('bekasi',         '⊞', '5 Reformer Beds'),
-    ('bekasi',         '◫', '1 Private Suite'),
-    ('bekasi',         '⚑', 'Free Parking'),
-    ('tangerang',      '⊞', '6 Reformer Beds'),
-    ('tangerang',      '◫', '2 Private Suites'),
-    ('tangerang',      '⚑', 'Free Parking')
-) AS f(branch_code, icon, label)
+    ('senopati',       '10 Reformer Beds'),
+    ('senopati',       '2 Private Suites'),
+    ('senopati',       'Valet Parking'),
+    ('senopati',       'Rainforest Shower'),
+    ('simatupang',     '6 Reformer Beds'),
+    ('simatupang',     'Valet Parking'),
+    ('kemang',         '6 Reformer Beds'),
+    ('kemang',         '1 Private Suite'),
+    ('kemang',         'Free Parking'),
+    ('grandindonesia', '8 Reformer Beds'),
+    ('grandindonesia', '2 Private Suites'),
+    ('grandindonesia', 'Valet Parking'),
+    ('pik',            '5 Reformer Beds'),
+    ('pik',            'Free Parking'),
+    ('sunter',         '4 Reformer Beds'),
+    ('sunter',         '1 Private Suite'),
+    ('bekasi',         '5 Reformer Beds'),
+    ('bekasi',         '1 Private Suite'),
+    ('bekasi',         'Free Parking'),
+    ('tangerang',      '6 Reformer Beds'),
+    ('tangerang',      '2 Private Suites'),
+    ('tangerang',      'Free Parking')
+) AS f(branch_code, label)
 JOIN branches b ON b.code = f.branch_code;
 
 -- Only the studios the weekly timetable actually uses.

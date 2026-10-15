@@ -25,11 +25,13 @@ CREATE TABLE class_types (
     sort_order  smallint    NOT NULL DEFAULT 0
 );
 
+-- Icons are deliberately not stored. A facility is a fact ("Valet Parking");
+-- which glyph represents it is a presentation decision and belongs in the
+-- front-end, where it can be changed without touching the data.
 CREATE TABLE payment_methods (
     code        text PRIMARY KEY,
     label       text        NOT NULL,
     description text,
-    icon        text,
     active      boolean     NOT NULL DEFAULT true
 );
 
@@ -63,7 +65,6 @@ CREATE TABLE branches (
 CREATE TABLE branch_facilities (
     id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     branch_id  bigint NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
-    icon       text,
     label      text   NOT NULL,
     UNIQUE (branch_id, label)
 );
