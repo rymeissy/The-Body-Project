@@ -169,6 +169,25 @@ a { color: var(--green-700); }
   font-size: 16px;
 }
 
+/* Pensil di kartu profil — tombol putih di atas panel krem, jadi butuh
+   warna sendiri, bukan warisan .icon-btn yang untuk header hijau. */
+.icon-btn--edit {
+  flex: 0 0 auto;
+  width: 34px; height: 34px;
+  font-size: 14px;
+  color: var(--ink-600);
+  background: var(--cream-100);
+  border: 1px solid var(--line);
+  transition: background .15s ease, color .15s ease;
+}
+.icon-btn--edit:hover {
+  color: var(--green-800);
+  background: var(--cream-200);
+}
+
+/* Email yang belum diisi bukan bug, jadi jangan pakai warna error. */
+.profile-email--empty { font-style: italic; }
+
 /* ==========================================================================
    5. AUTH — gerbang sebelum masuk ke aplikasi
    ========================================================================== */
@@ -1340,6 +1359,9 @@ a { color: var(--green-700); }
   transition: transform .28s cubic-bezier(.32, .72, 0, 1);
 }
 .sheet.is-open { transform: translateY(0); }
+/* disembunyikan lewat transform, tapi display:flex masih merendernya.
+   Aturan ini memastikan benar-benar hilang dari layout. */
+.sheet[hidden] { display: none; }
 
 .sheet__grip {
   width: 40px; height: 4px;
@@ -1360,12 +1382,24 @@ a { color: var(--green-700); }
 }
 .sheet__head p { font-size: 12px; color: var(--ink-400); margin-top: 2px; }
 .sheet__body { padding: 16px 18px; overflow-y: auto; flex: 1 1 auto; }
+/* Kaki sheet menyatu dengan badan sheet: tanpa garis pemisah, tanpa blok
+   putih. Transparan, bukan var(--cream-50), supaya tidak mungkin melenceng
+   kalau warna sheet nanti berubah. */
 .sheet__foot {
   padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--line);
-  background: var(--white);
+  border-top: 0;
+  background: transparent;
   flex: 0 0 auto;
 }
+
+/* Sheet ubah profil: dua tombolnya dirapatkan ke kanan dengan lebar sama. */
+#profileSheet .sheet__foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+#profileSheet .sheet__foot .btn { min-width: 104px; }
 
 /* Langkah */
 .steps { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
@@ -1521,6 +1555,9 @@ a { color: var(--green-700); }
   box-shadow: var(--sh-lg);
   opacity: 0;
   visibility: hidden;
+  /* Toast hanya pemberitahuan, tidak pernah bisa diklik. Tanpa ini, toast
+     yang sedang tampil bisa menelan klik di tombol di underneath-nya. */
+  pointer-events: none;
   transition: transform .3s cubic-bezier(.32, .72, 0, 1),
               opacity .2s ease,
               visibility .3s;

@@ -30,7 +30,7 @@
 
       <!-- ---------- Masuk ---------- -->
       <form class="auth__form" id="formLogin" novalidate aria-labelledby="loginTitle">
-        <h1 class="auth__title" id="loginTitle">Selamat datang kembali</h1>
+        <h1 class="auth__title" id="loginTitle">Masuk ke The Body Project</h1>
         <p class="auth__sub">Masukkan nomor WhatsApp, kami kirim kode OTP untuk masuk.</p>
 
         <div class="field-group">
@@ -47,71 +47,12 @@
         <button class="btn btn--primary btn--block" type="submit">Kirim Kode OTP</button>
 
         <p class="auth__note">
-          Tidak perlu mengingat kata sandi. Kode hanya berlaku sekali dan
-          kedaluwarsa dalam 5 menit.
-        </p>
-
-        <p class="auth__foot">
-          Belum punya akun?
-          <button class="linkish" type="button" data-goto="register">Daftar di sini</button>
+          Tidak ada pendaftaran. Nomor yang baru pertama kali dipakai akan dibuatkan
+          akun otomatis setelah kodemu terverifikasi.
         </p>
       </form>
 
       <!-- ---------- Daftar ---------- -->
-      <form class="auth__form" id="formRegister" novalidate aria-labelledby="registerTitle" hidden>
-        <h1 class="auth__title" id="registerTitle">Buat akun baru</h1>
-        <p class="auth__sub">Cukup nama dan nomor WhatsApp. Tanpa kata sandi.</p>
-
-        <div class="field-group">
-          <label class="field-label" for="regName">Nama lengkap</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">👤</span>
-            <input type="text" id="regName" name="regName"
-                   autocomplete="name" placeholder="Anindya Kirana">
-          </div>
-          <p class="field__error" id="errRegName" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="regPhone">No. WhatsApp</label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">✆</span>
-            <input type="tel" id="regPhone" name="regPhone"
-                   autocomplete="tel" inputmode="tel"
-                   placeholder="0812-3456-7890">
-          </div>
-          <p class="field__error" id="errRegPhone" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="regEmail">
-            Email <span class="field__hint">opsional — untuk invoice</span>
-          </label>
-          <div class="field">
-            <span class="field__icon" aria-hidden="true">✉</span>
-            <input type="email" id="regEmail" name="regEmail"
-                   autocomplete="email" placeholder="nama@email.com">
-          </div>
-          <p class="field__error" id="errRegEmail" role="alert"></p>
-        </div>
-
-        <div class="field-group">
-          <label class="check">
-            <input type="checkbox" id="regAgree">
-            <span>Saya setuju dengan <a href="#">syarat &amp; ketentuan</a> serta
-                  <a href="#">kebijakan privasi</a>.</span>
-          </label>
-          <p class="field__error" id="errRegAgree" role="alert"></p>
-        </div>
-
-        <button class="btn btn--primary btn--block" type="submit">Buat akun</button>
-
-        <p class="auth__foot">
-          Sudah punya akun?
-          <button class="linkish" type="button" data-goto="login">Login di sini</button>
-        </p>
-      </form>
-
       <!-- ---------- Verifikasi OTP ---------- -->
       <form class="auth__form" id="formOtp" novalidate aria-labelledby="otpTitle" hidden>
         <h1 class="auth__title" id="otpTitle">Masukkan kode OTP</h1>
@@ -147,6 +88,29 @@
         <p class="auth__foot">
           <button class="linkish" type="button" data-goto="back">Ganti nomor</button>
         </p>
+      </form>
+
+      <!-- ---------- Nama lengkap (sekali saja, untuk nomor baru) ---------- -->
+      <form class="auth__form" id="formName" novalidate aria-labelledby="nameTitle" hidden>
+        <h1 class="auth__title" id="nameTitle">Siapa namamu?</h1>
+        <p class="auth__sub">
+          Nomor <strong id="namePhone">—</strong> baru pertama kali dipakai.
+          Namamu dipakai untuk e-tiket dan absensi kelas.
+        </p>
+
+        <div class="field-group">
+          <label class="field-label" for="fullName">Nama lengkap</label>
+          <div class="field">
+            <span class="field__icon" aria-hidden="true">👤</span>
+            <input type="text" id="fullName" name="fullName"
+                   autocomplete="name" placeholder="Anindya Kirana">
+          </div>
+          <p class="field__error" id="errFullName" role="alert"></p>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">Simpan &amp; masuk</button>
+
+        <p class="auth__note">Nama ini hanya diminta sekali saja.</p>
       </form>
     </div>
   </div>
@@ -287,11 +251,14 @@
     <div class="panel">
       <div class="panel__body" style="display:flex; gap:14px; align-items:center;">
         <div class="avatar" id="profileAvatar" style="width:52px;height:52px;font-size:17px;">AK</div>
-        <div>
+        <div style="flex:1; min-width:0;">
           <div style="font-size:16px;font-weight:600;" id="profileName">Anindya Kirana</div>
-          <div style="font-size:12px;color:var(--ink-400);margin-top:2px;" id="profileEmail">anindya@kranulo.com</div>
-          <span class="tag tag--level" style="margin-top:7px;">Pengguna / Staff</span>
+          <div style="font-size:12px;color:var(--ink-400);margin-top:2px;" id="profileEmail">Email belum diisi</div>
         </div>
+        <button class="icon-btn icon-btn--edit" type="button" id="editProfileBtn"
+                aria-label="Ubah data profil">
+          <span aria-hidden="true">✎</span>
+        </button>
       </div>
     </div>
 
@@ -301,7 +268,6 @@
         <dl style="margin:0;">
           <div class="kv"><dt>No. WhatsApp</dt><dd id="profilePhone">+62 812-3456-7890</dd></div>
           <div class="kv"><dt>Bergabung sejak</dt><dd id="profileSince">5 Mei 2026</dd></div>
-          <div class="kv"><dt>Poin hadiah</dt><dd>340 poin</dd></div>
           <div class="kv"><dt>Paket aktif</dt><dd>1 paket</dd></div>
         </dl>
       </div>
@@ -313,10 +279,6 @@
         <button class="item" type="button" style="width:100%; text-align:left;">
           <span class="item__icon" aria-hidden="true">🔔</span>
           <span class="item__body"><span class="item__title">Notifikasi pemesanan</span><span class="item__sub">Email & WhatsApp</span></span>
-        </button>
-        <button class="item" type="button" style="width:100%; text-align:left;">
-          <span class="item__icon" aria-hidden="true">🎁</span>
-          <span class="item__body"><span class="item__title">Tukar poin hadiah</span><span class="item__sub">Diskon paket &amp; merchandise</span></span>
         </button>
         <button class="item" type="button" style="width:100%; text-align:left;">
           <span class="item__icon" aria-hidden="true">💬</span>
@@ -345,6 +307,54 @@
   <div class="sheet__body" id="sheetBody"></div>
 
   <div class="sheet__foot" id="sheetFoot"></div>
+</section>
+
+<!-- ===================== BOTTOM SHEET: UBAH DATA PROFIL ===================== -->
+<section class="sheet" id="profileSheet" role="dialog" aria-modal="true" aria-labelledby="profileSheetTitle" hidden>
+  <div class="sheet__grip"></div>
+
+  <div class="sheet__head">
+    <h2 id="profileSheetTitle">Ubah Data Profil</h2>
+    <p>Email dipakai untuk invoice dan pemberitahuan. Kosongkan bila tidak dipakai.</p>
+  </div>
+
+  <div class="sheet__body">
+    <div class="field-group">
+      <label class="field-label" for="editName">Nama lengkap</label>
+      <div class="field">
+        <span class="field__icon" aria-hidden="true">👤</span>
+        <input type="text" id="editName" name="editName" autocomplete="name"
+               placeholder="Anindya Kirana">
+      </div>
+      <p class="field__error" id="errEditName" role="alert"></p>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="editEmail">
+        Email <span class="field__hint">opsional</span>
+      </label>
+      <div class="field">
+        <span class="field__icon" aria-hidden="true">✉</span>
+        <input type="email" id="editEmail" name="editEmail" autocomplete="email"
+               placeholder="nama@email.com">
+      </div>
+      <p class="field__error" id="errEditEmail" role="alert"></p>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="editPhone">No. WhatsApp</label>
+      <div class="field">
+        <span class="field__icon" aria-hidden="true">✆</span>
+        <input type="tel" id="editPhone" name="editPhone" disabled>
+      </div>
+      <p class="field__error" id="errEditPhone" role="alert"></p>
+    </div>
+  </div>
+
+  <div class="sheet__foot">
+    <button class="btn btn--ghost" type="button" id="editCancelBtn">Batal</button>
+    <button class="btn btn--primary" type="button" id="editSaveBtn">Simpan</button>
+  </div>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

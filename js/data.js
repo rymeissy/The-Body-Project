@@ -569,8 +569,7 @@ const CUSTOMER = {
   email: 'anindya@kranulo.com',
   phone: '+62 812-3456-7890',
   memberSince: '5 Mei 2026',
-  tier: 'Pengguna / Staff',
-  points: 340
+  tier: 'Pengguna / Staff'
 };
 
 const HISTORY = [

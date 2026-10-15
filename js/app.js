@@ -703,7 +703,7 @@
         <div class="panel__body">
           <dl style="margin:0;">
             <div class="kv"><dt>Nama lengkap</dt><dd>${CUSTOMER.name}</dd></div>
-            <div class="kv"><dt>Email</dt><dd>${CUSTOMER.email}</dd></div>
+            <div class="kv"><dt>Email</dt><dd>${CUSTOMER.email || '—'}</dd></div>
             <div class="kv"><dt>No. WhatsApp</dt><dd>${CUSTOMER.phone}</dd></div>
           </dl>
         </div>
@@ -930,8 +930,9 @@
 
   /* ======================================================================
      AUTH — gerbang sebelum masuk ke aplikasi
-     Login dan registrasi cukup nomor WhatsApp. Tidak ada kata sandi:
-     server mengirim kode OTP, lalu memverifikasinya.
+     Tidak ada pendaftaran. Satu alur saja: nomor WhatsApp → OTP → nama
+     (khusus nomor baru) → aplikasi. Server membuatkan akunnya begitu
+     kode OTP terverifikasi.
      ====================================================================== */
   const authScreen = $('#authScreen');
   const appShell   = $('#appShell');
@@ -939,22 +940,19 @@
   const KEY_USER   = 'tbp.user';
   const KEY_TOKEN  = 'tbp.token';
 
-  const formLogin    = $('#formLogin');
-  const formRegister = $('#formRegister');
-  const formOtp      = $('#formOtp');
+  const formLogin = $('#formLogin');
+  const formOtp   = $('#formOtp');
+  const formName  = $('#formName');
 
-  const AUTH_FORMS = { login: formLogin, register: formRegister, otp: formOtp };
+  const AUTH_FORMS = { login: formLogin, otp: formOtp, name: formName };
 
   /* ---------- Perpindahan form ---------- */
-  let authReturn = 'login';          // layar asal sebelum masuk ke OTP
   let otpTimer   = null;
-  let otpPayload = null;             // { phone, purpose, fullName, email }
+  let otpPayload = null;             // { phone }
 
   function setAuthForm(which) {
-    const target = which === 'back' ? AUTH_FORMS[authReturn] : AUTH_FORMS[which];
+    const target = AUTH_FORMS[which];
     if (!target) return;
-
-    if (which === 'back') authReturn = 'login';
 
     Object.keys(AUTH_FORMS).forEach(key => { AUTH_FORMS[key].hidden = key !== which; });
 
@@ -969,8 +967,9 @@
   $$('[data-goto]').forEach(btn => {
     btn.addEventListener('click', () => {
       const to = btn.dataset.goto;
-      // Kembali ke layar asal saat menekan "Ganti nomor".
-      setAuthForm(to === 'back' ? authReturn : to);
+      // "Ganti nomor" kembali ke layar awal, dan membatalkan OTP yang jalan.
+      if (to === 'back') { otpPayload = null; setAuthForm('login'); return; }
+      setAuthForm(to);
     });
   });
 
@@ -1013,15 +1012,17 @@
     if (forced || (user && user.name)) {
       authScreen.hidden = true;
       appShell.hidden = false;
-      applyUserToProfile(forced ? { name: CUSTOMER.name, email: CUSTOMER.email,
-                                    phone: CUSTOMER.phone, since: CUSTOMER.memberSince } : user);
+      // Mode demo sengaja tanpa email, supaya Profil terlihat sama persis dengan
+    // akun baru yang belum pernah mengisinya.
+    applyUserToProfile(forced ? { name: CUSTOMER.name, email: null,
+                                  phone: CUSTOMER.phone, since: CUSTOMER.memberSince } : user);
     } else {
       authScreen.hidden = false;
       appShell.hidden = true;
       document.body.style.overflow = '';
       formLogin.reset();
-      formRegister.reset();
       formOtp.reset();
+      formName.reset();
       stopCountdown();
       otpPayload = null;
       $('#otpDemo').hidden = true;
@@ -1040,8 +1041,14 @@
     const nameEl = $('#profileName');
     if (nameEl) nameEl.textContent = user.name;
 
+    // Email tidak pernah diisi otomatis. Kalau kosong, katakan begitu —
+    // menampilkan alamatdefault akan menyesatkan.
     const emailEl = $('#profileEmail');
-    if (emailEl) emailEl.textContent = user.email || CUSTOMER.email;
+    if (emailEl) {
+      const ada = Boolean(user.email);
+      emailEl.textContent = ada ? user.email : 'Email belum diisi';
+      emailEl.classList.toggle('profile-email--empty', !ada);
+    }
 
     const phoneEl = $('#profilePhone');
     if (phoneEl) phoneEl.textContent = user.phone || CUSTOMER.phone;
@@ -1056,7 +1063,9 @@
       const dd = row.querySelector('dd');
       if (!dt || !dd) return;
       if (dt.textContent.trim() === 'Nama lengkap') dd.textContent = user.name;
-      if (dt.textContent.trim() === 'Email') dd.textContent = user.email || CUSTOMER.email;
+      if (dt.textContent.trim() === 'Email') {
+        dd.textContent = user.email || '—';
+      }
     });
 
     // Ringkasan pada halaman Paket
@@ -1065,8 +1074,8 @@
   }
 
 /* ---------- Validasi ---------- */
+  const RE_PHONE = /^628[0-9]{10}$/;
   const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const RE_PHONE = /^(?:\+?62|0)\d{8,14}$/;
 
   function setError(inputId, errId, message) {
     const input = $('#' + inputId);
@@ -1087,21 +1096,39 @@
   /** Buang spasi dan tanda hubung supaya validasi tidak repot-repot soal spasi. */
   const digits = value => value.replace(/[\s\-().]/g, '');
 
+  /* Normalisasi ke bentuk yang sama seperti di serve.js, lalu uji dengan
+     aturan yang sama juga. Kalau aturannya berbeda di sini dan di sana, user
+     bisa lolos dari validasi lalu kena error database yang tidak enak dibaca. */
+  function toE164(raw) {
+    let d = raw.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+
+    if (d.startsWith('+62') || d.startsWith('62')) d = '62' + d.replace(/^\+?62/, '');
+    else if (d.startsWith('0')) d = '62' + d.slice(1);
+    else d = '62' + d;
+
+    return RE_PHONE.test(d) ? d : null;
+  }
+
   function checkPhone(inputId, errId, label) {
     const raw = digits($('#' + inputId).value);
-    if (!raw)          return setError(inputId, errId, label + ' wajib diisi.');
-    if (!RE_PHONE.test(raw)) return setError(inputId, errId,
+    if (!raw) return setError(inputId, errId, label + ' wajib diisi.');
+
+    if (!toE164(raw)) return setError(inputId, errId,
       'Nomor tidak valid. Contoh: 0812-3456-7890');
     return true;
   }
 
-  /* ---------- Panggil API ---------- */
-  async function api(path, body) {
+  /* ---------- Panggil API ----------
+     token diisi untuk endpoint yang butuh sesi, yaitu /api/auth/profile. */
+  async function api(path, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+
     let res;
     try {
       res = await fetch(path, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
       });
     } catch {
@@ -1174,68 +1201,14 @@
 
     if (!checkPhone('loginPhone', 'errLoginPhone', 'No. WhatsApp')) return;
 
-    const phone = digits($('#loginPhone').value);
-    authReturn = 'login';
+    const phone = toE164(digits($('#loginPhone').value));
 
     await withLoading(e.submitter, 'Mengirim kode…', async () => {
       try {
-        const res = await api('/api/auth/otp/request', { phone, purpose: 'login' });
-        showOtpScreen({ phone, purpose: 'login' }, res);
+        const res = await api('/api/auth/otp/request', { phone });
+        showOtpScreen({ phone }, res);
       } catch (err) {
         setError('loginPhone', 'errLoginPhone', err.message);
-      }
-    });
-  });
-
-  /* ---------- Daftar: nama + nomor → OTP ---------- */
-  formRegister.addEventListener('submit', async e => {
-    e.preventDefault();
-    clearErrors(formRegister);
-
-    const name  = $('#regName').value.trim();
-    const email = $('#regEmail').value.trim();
-
-    let ok = true;
-    if (!name) {
-      ok = setError('regName', 'errRegName', 'Nama lengkap wajib diisi.');
-    } else if (name.length < 3) {
-      ok = setError('regName', 'errRegName', 'Nama terlalu pendek.');
-    }
-
-    if (!checkPhone('regPhone', 'errRegPhone', 'No. WhatsApp')) ok = false;
-
-    // Email opsional, tapi kalau diisi harus valid.
-    if (email && !RE_EMAIL.test(email)) {
-      ok = setError('regEmail', 'errRegEmail', 'Format email tidak valid.');
-    }
-
-    if (!$('#regAgree').checked) {
-      $('#errRegAgree').textContent = 'Anda harus menyetujui syarat dan ketentuan.';
-      ok = false;
-    }
-
-    if (!ok) {
-      const firstBad = formRegister.querySelector('.field.is-invalid');
-      if (firstBad) firstBad.querySelector('input').focus();
-      return;
-    }
-
-    const phone = digits($('#regPhone').value);
-    authReturn = 'register';
-
-    await withLoading(e.submitter, 'Membuat akun…', async () => {
-      try {
-        const res = await api('/api/auth/otp/request', { phone, purpose: 'register' });
-        showOtpScreen({ phone, purpose: 'register', fullName: name, email }, res);
-      } catch (err) {
-        // Nomor yang sudah terdaftar diarahkan ke layar masuk, bukan error buta.
-        if (/terdaftar/i.test(err.message)) {
-          toast('Nomor sudah terdaftar. Silakan masuk.');
-          $('#loginPhone').value = $('#regPhone').value;
-          setAuthForm('login');
-          return;
-        }
-        setError('regPhone', 'errRegPhone', err.message);
       }
     });
   });
@@ -1283,15 +1256,61 @@
 
     await withLoading(e.submitter, 'Memverifikasi…', async () => {
       try {
-        const res = await api('/api/auth/otp/verify', Object.assign({}, otpPayload, { code }));
+        const res = await api('/api/auth/otp/verify',
+          Object.assign({}, otpPayload, { code }));
+
+        // Token disimpan dulu supaya layar nama bisa mengirim profil.
         saveSession(res.user, res.token);
         stopCountdown();
+        otpPayload = null;
+
+        // Nomor baru belum punya nama asli — minta sekali, lalu selesai.
+        if (res.needsName) {
+          $('#namePhone').textContent = res.user.phone;
+          $('#fullName').value = '';
+          setAuthForm('name');
+          return;
+        }
+
         gate();
-        toast(otpPayload.purpose === 'register'
-          ? 'Akun berhasil dibuat. Selamat datang, ' + res.user.name.split(' ')[0]
-          : 'Selamat datang kembali, ' + res.user.name.split(' ')[0]);
+        toast('Selamat datang kembali, ' + res.user.name.split(' ')[0]);
       } catch (err) {
         setError('otpCode', 'errOtpCode', err.message);
+      }
+    });
+  });
+
+  /* ---------- Nama lengkap (sekali saja) ---------- */
+  formName.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearErrors(formName);
+
+    const name = $('#fullName').value.trim();
+
+    if (!name) {
+      setError('fullName', 'errFullName', 'Nama lengkap wajib diisi.');
+      return;
+    }
+    if (name.length < 3) {
+      setError('fullName', 'errFullName', 'Nama terlalu pendek.');
+      return;
+    }
+
+    const token = localStorage.getItem(KEY_TOKEN);
+    if (!token) {
+      clearSession();
+      gate();
+      return;
+    }
+
+    await withLoading(e.submitter, 'Menyimpan…', async () => {
+      try {
+        const res = await api('/api/auth/profile', { name }, token);
+        saveSession(res.user, token);
+        gate();
+        toast('Akun siap. Selamat datang, ' + res.user.name.split(' ')[0]);
+      } catch (err) {
+        setError('fullName', 'errFullName', err.message);
       }
     });
   });
@@ -1302,10 +1321,7 @@
 
     this.disabled = true;
     try {
-      const res = await api('/api/auth/otp/request', {
-        phone: otpPayload.phone,
-        purpose: otpPayload.purpose
-      });
+      const res = await api('/api/auth/otp/request', { phone: otpPayload.phone });
 
       showOtpScreen(otpPayload, res);
       toast('Kode baru telah dikirim');
@@ -1327,6 +1343,89 @@
     clearSession();
     gate();
     toast('Anda telah keluar');
+  });
+
+  /* ======================================================================
+     UBAH DATA PROFIL — ikon pensil di kartu Profil
+     ====================================================================== */
+  const profileSheet = $('#profileSheet');
+
+  function openProfileSheet() {
+    const user = signedInUser() || {};
+
+    $('#editName').value  = user.name || '';
+    $('#editEmail').value = user.email || '';
+    $('#editPhone').value = user.phone || '';
+
+    // Buka ulang harus bersih: pesan dan border merah dari percobaan sebelumnya
+    // tidak boleh ikut terbawa.
+    ['errEditName', 'errEditEmail'].forEach(id => {
+      $('#' + id).textContent = '';
+      $('#' + id).previousElementSibling.classList.remove('is-invalid');
+    });
+
+    profileSheet.hidden = false;
+    requestAnimationFrame(() => {
+      backdrop.classList.add('is-open');
+      profileSheet.classList.add('is-open');
+    });
+    document.body.style.overflow = 'hidden';
+    $('#editName').focus();
+  }
+
+  function closeProfileSheet() {
+    backdrop.classList.remove('is-open');
+    profileSheet.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(() => { profileSheet.hidden = true; }, 280);
+  }
+
+  $('#editProfileBtn').addEventListener('click', openProfileSheet);
+  $('#editCancelBtn').addEventListener('click', closeProfileSheet);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && profileSheet.classList.contains('is-open')) closeProfileSheet();
+  });
+
+  $('#editSaveBtn').addEventListener('click', async function () {
+    const name  = $('#editName').value.trim();
+    const email = $('#editEmail').value.trim();
+
+    let ok = true;
+    if (!name) {
+      ok = setError('editName', 'errEditName', 'Nama lengkap wajib diisi.');
+    } else if (name.length < 3) {
+      ok = setError('editName', 'errEditName', 'Nama terlalu pendek.');
+    }
+
+    // Email boleh kosong, tapi kalau diisi harus benar.
+    if (email && !RE_EMAIL.test(email)) {
+      ok = setError('editEmail', 'errEditEmail', 'Format email tidak valid.');
+    }
+
+    if (!ok) return;
+
+    const token = localStorage.getItem(KEY_TOKEN);
+    if (!token) { clearSession(); gate(); return; }
+
+    const btn = this;
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+
+    try {
+      // Email selalu ikut dikirim, termasuk string kosong, supaya pengguna
+      // bisa menghapus email yang pernah diisi.
+      const res = await api('/api/auth/profile', { name, email }, token);
+      saveSession(res.user, token);
+      applyUserToProfile(res.user);
+      closeProfileSheet();
+      toast('Data profil diperbarui');
+    } catch (err) {
+      toast(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
   });
 
   /* ======================================================================
