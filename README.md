@@ -3,9 +3,6 @@
 Mobile web application prototype for booking Pilates classes at Studio Pilates
 The Body Project. Front-end only, no backend.
 
-`db/` holds the PostgreSQL schema the app is meant to be wired to — see
-[db/README.md](db/README.md).
-
 ## Run
 
 ```bash
@@ -29,22 +26,10 @@ prototype/
 ├── preview.html    # Side-by-side responsive preview
 ├── serve.js        # Dependency-free static server
 ├── css/style.css   # Design tokens, components, media queries
-├── db/             # PostgreSQL schema, functions, and seed data
 └── js/
     ├── data.js     # Sample data: classes, packages, instructors, branches
     └── app.js      # Auth, navigation, filtering, rendering, booking flow
 ```
-
-## Database
-
-```bash
-cd db && docker compose up -d     # Postgres 16 on localhost:5433
-```
-
-`schema.sql` (14 tables, 4 views), `functions.sql` (booking, cancellation,
-waitlist promotion, session generation), and `seed.sql` (8 branches, 103
-sessions, 239 bookings) run automatically on first start. `db/verify.sql`
-exercises the whole booking path and rolls back afterwards.
 
 ## Layout
 
@@ -131,4 +116,4 @@ booking to History.
 2. Merchandise storefront
 3. Class search (`state.search` exists in `app.js` but has no input)
 4. Persistent state — resets on reload
-5. Backend integration — the app still reads `data.js` instead of `db/`
+5. Backend integration — `data.js` is still static
