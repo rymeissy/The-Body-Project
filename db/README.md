@@ -10,7 +10,7 @@ titles, package names, and payment methods.
 ## Run
 
 ```bash
-docker compose up -d          # Postgres 16 on localhost:5433
+docker compose up -d          # Postgres 16 on localhost:5434
 ```
 
 The three SQL files run automatically on first start, in order:
@@ -37,12 +37,12 @@ docker exec -it tbp-postgres psql -U tbp -d the_body_project
 | | |
 |---|---|
 | Host | `localhost` |
-| Port | `5433` |
+| Port | `5434` |
 | Database | `the_body_project` |
 | User / password | `tbp` / `tbp_dev_password` |
 | Timezone | `Asia/Jakarta` |
 
-To point the app at it later: `postgres://tbp:tbp_dev_password@localhost:5433/the_body_project`
+To point the app at it later: `postgres://tbp:tbp_dev_password@localhost:5434/the_body_project`
 
 ## Check it works
 

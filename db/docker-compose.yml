@@ -9,7 +9,10 @@ services:
       TZ: Asia/Jakarta
       PGTZ: Asia/Jakarta
     ports:
-      - "5433:5432"
+      # 5434, bukan 5433 — port 5433 dipakai project lain di mesin yang sama.
+      # Kalau ":5432" dipakai, pilihan project ini yang mengalah, karena
+      # project lain tidak boleh ikut tersentuh.
+      - "5434:5432"
     volumes:
       - tbp_pgdata:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro

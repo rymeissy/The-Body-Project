@@ -34,7 +34,7 @@ try {
 
 const DB = {
   host: process.env.PGHOST || 'localhost',
-  port: Number(process.env.PGPORT || 5433),
+  port: Number(process.env.PGPORT || 5434),
   database: process.env.PGDATABASE || 'the_body_project',
   user: process.env.PGUSER || 'tbp',
   password: process.env.PGPASSWORD || 'tbp_dev_password'
@@ -224,6 +224,18 @@ async function route(req, res, url) {
     try {
       issued = await pool.query('SELECT * FROM fn_request_otp($1)', [phone]);
     } catch (err) {
+      // Kesalahan koneksi apa pun (database mati, password salah, port dipakai
+      // project lain) akan sampai ke sini juga. Melapiskannya sebagai 429
+      // "tunggu N detik" membuat user mengira ini soal throttle, padahal
+      // server-nya yang tidak bisa bicara dengan database.
+      const offline = err.code === 'ECONNREFUSED' || err.code === '28P01'
+        || /timeout|terminated|authentication failed|does not exist/i.test(err.message || '');
+      if (offline) {
+        console.error('[db] ' + err.message);
+        return sendJson(res, 503, {
+          error: 'Database belum siap. Jalankan: cd db && docker compose up -d'
+        });
+      }
       return sendJson(res, 429, { error: err.message.replace(/^ERROR:\s*/, '') });
     }
 
