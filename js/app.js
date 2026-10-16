@@ -755,6 +755,12 @@
     const pkg = PACKAGES.find(p => p.id === state.packageId);
     const usingPackage = state.payMode === 'package';
 
+    /* Data peserta diambil dari akun yang sedang masuk, bukan dari CUSTOMER
+       yang cuma data contoh. Tombol pemesanan sudah menolak membuka sheet
+       kalau belum login, jadi di sini praktis selalu ada; penjaganya tetap
+       ditulis supaya tidak melempar error kalau aturannya berubah. */
+    const peserta = signedInUser();
+
     return `
       ${stepsBar()}
       <div class="panel" style="margin-bottom:16px;">
@@ -763,9 +769,9 @@
         </div>
         <div class="panel__body">
           <dl style="margin:0;">
-            <div class="kv"><dt>Nama lengkap</dt><dd>${CUSTOMER.name}</dd></div>
-            <div class="kv"><dt>Email</dt><dd>${CUSTOMER.email || '—'}</dd></div>
-            <div class="kv"><dt>No. WhatsApp</dt><dd>${CUSTOMER.phone}</dd></div>
+            <div class="kv"><dt>Nama lengkap</dt><dd>${peserta ? peserta.name : '—'}</dd></div>
+            <div class="kv"><dt>Email</dt><dd>${(peserta && peserta.email) || '—'}</dd></div>
+            <div class="kv"><dt>No. WhatsApp</dt><dd>${peserta ? formatTelepon(peserta.phone) : '—'}</dd></div>
           </dl>
         </div>
       </div>
@@ -1199,7 +1205,7 @@
     }
 
     const phoneEl = $('#profilePhone');
-    if (phoneEl) phoneEl.textContent = user.phone || CUSTOMER.phone;
+    if (phoneEl) phoneEl.textContent = formatTelepon(user.phone || CUSTOMER.phone);
 
     // Tanggal bergabung = hari akun dibuat
     const sinceEl = $('#profileSince');
@@ -1499,7 +1505,9 @@
 
     $('#editName').value  = user.name || '';
     $('#editEmail').value = user.email || '';
-    $('#editPhone').value = user.phone || '';
+    // Nomor dikunci jadi tidak bisa diubah, tapi tetap ditata supaya bentuknya
+  // sama dengan yang tampil di Profil.
+  $('#editPhone').value = formatTelepon(user.phone);
 
     // Buka ulang harus bersih: pesan dan border merah dari percobaan sebelumnya
     // tidak boleh ikut terbawa.

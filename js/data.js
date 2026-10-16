@@ -44,6 +44,13 @@ const NAMA_BULAN = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
+/* Versi tiga huruf, untuk baris ringkas seperti ringkasan riwayat.
+   "Mei" tetap penuh karena tiga hurufnya juga "Mei". */
+const BULAN_SINGKAT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+];
+
 const HARI_MINGGU = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 const pad = n => String(n).padStart(2, '0');
@@ -81,6 +88,29 @@ const hari = n => {
   d.setDate(d.getDate() + n);
   return toKey(d);
 };
+
+/** Objek Date n hari dari hari ini; negatif berarti sudah lewat.
+    Pakai ini kalau butuh tanggalnya, bukan hanya kuncinya. */
+const tanggalRelatif = n => {
+  const d = toDate(CAL_TODAY);
+  d.setDate(d.getDate() + n);
+  return d;
+};
+
+/** "8 Okt 2026" -- bentuk ringkas untuk baris riwayat dan masa berlaku. */
+const ringkasTanggal = d => `${d.getDate()} ${BULAN_SINGKAT[d.getMonth()]} ${d.getFullYear()}`;
+
+/** "6281261637438" -> "+62 812-3456-7890".
+    Nomor disimpan di database dalam format E.164 supaya bisa dibandingkan
+    dan dicari; bentuknya tidak enak dibaca, jadi ditata hanya saat ditampilkan.
+    Kalau bukan 13 digit berawalan 62, dikembalikan apa adanya -- lebih baik
+    menampilkan angka mentah daripada nomor yang dipotong salah. */
+function formatTelepon(raw) {
+  if (!raw) return '';
+  const d = String(raw).replace(/\D/g, '');
+  if (d.length !== 13 || !d.startsWith('62')) return String(raw);
+  return `+62 ${d.slice(2, 5)}-${d.slice(5, 9)}-${d.slice(9)}`;
+}
 
 /** True bila tanggal boleh dipilih (tidak lampau, masih dalam horizon). */
 function isSelectable(key) {
@@ -406,13 +436,20 @@ const JADWAL_MINGGUAN = [
   }
 })();
 
+/* Masa berlaku mengikuti aturan di database (packages.validity_days):
+   paket 10 sesi 180 hari, paket group 90 hari. Dihitung dari hari ini, bukan
+   ditulis sebagai tanggal mati -- kalau mati, kartu paket akan tetap menulis
+   "Exp. 28 Nov 2026" bahkan setelah tanggal itu lewat, padahal statusnya
+   masih Aktif. */
+const VALIDITAS_HARI = { p10: 180, p5: 90 };
+
 const PACKAGES = [
   {
     id: 'p10',
     name: 'Paket 10 Sesi Pilates',
     status: 'Aktif',
     total: 10, remaining: 6,
-    expires: '28 Nov 2026',
+    expires: ringkasTanggal(tanggalRelatif(VALIDITAS_HARI.p10)),
     includes: 'Termasuk Reformer & Cadillac',
     price: 3250000
   },
@@ -421,7 +458,7 @@ const PACKAGES = [
     name: 'Paket 5 Sesi Pilates Group',
     status: 'Habis',
     total: 5, remaining: 0,
-    expires: '5 Nov 2026',
+    expires: ringkasTanggal(tanggalRelatif(VALIDITAS_HARI.p5)),
     includes: 'Termasuk Mat Flow',
     price: 1750000
   }
@@ -587,11 +624,17 @@ const CUSTOMER = {
   tier: 'Pengguna / Staff'
 };
 
+/* Ringkasan riwayat. Tanggal ditulis sebagai jumlah hari dari hari ini, bukan
+   tanggal mati -- kalau ditulis mati, riwayatnya akan tertinggal di Oktober
+   2026 padahal aplikasi sudah dipakai berbulan-bulan. */
+const riwayatSesi = (cabang, hari, sesi) =>
+  `${cabang} · ${ringkasTanggal(tanggalRelatif(hari))} · Sesi ke-${sesi}`;
+
 const HISTORY = [
-  { id: 'h1', icon: '✓', title: 'Reformer Sculpt & Core', sub: 'Senopati · 8 Okt 2026 · Sesi ke-5', side: 'Selesai', sideType: 'done' },
-  { id: 'h2', icon: '✓', title: 'Mat Floor Basics',       sub: 'Senopati · 5 Okt 2026 · Sesi ke-4', side: 'Selesai', sideType: 'done' },
-  { id: 'h3', icon: '✕', title: 'Core & Fluid Flow',      sub: 'Senopati · 2 Okt 2026 · Sesi ke-3', side: 'Dibatalkan', sideType: 'void' },
-  { id: 'h4', icon: '✓', title: 'Reformer Power Flow',    sub: 'Senopati · 29 Sep 2026 · Sesi ke-2', side: 'Selesai', sideType: 'done' }
+  { id: 'h1', icon: '✓', title: 'Reformer Sculpt & Core', sub: riwayatSesi('Senopati', -8, 5),  side: 'Selesai',    sideType: 'done' },
+  { id: 'h2', icon: '✓', title: 'Mat Floor Basics',       sub: riwayatSesi('Senopati', -11, 4), side: 'Selesai',    sideType: 'done' },
+  { id: 'h3', icon: '✗', title: 'Core & Fluid Flow',      sub: riwayatSesi('Senopati', -14, 3), side: 'Dibatalkan', sideType: 'void' },
+  { id: 'h4', icon: '✓', title: 'Reformer Power Flow',    sub: riwayatSesi('Senopati', -17, 2), side: 'Selesai',    sideType: 'done' }
 ];
 
 const POLICIES = [

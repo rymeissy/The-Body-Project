@@ -140,6 +140,47 @@ function maskPhone(phone) {
   return '+62 ' + phone.slice(2, 5) + ' •••• ' + phone.slice(-4);
 }
 
+/* Terjemahkan kesalahan PostgreSQL menjadi kalimat yang bisa dibaca orang.
+   err.message dari pg memuat nama constraint dan detail SQL -- berguna untuk
+   log server, tapi kalau tampilannya di layar pengguna seperti "duplicate key
+   value violates unique constraint users_email_key", itu hanya menimbulkan
+   pertanyaan, bukan jawaban.
+
+   err.asal tetap ditulis ke log supaya tidak ada informasi yang hilang. */
+function pesanDatabase(err, konteks) {
+  const kode = err && err.code;
+  const mentah = (err && err.message ? String(err.message) : '').replace(/^ERROR:\s*/, '');
+  console.error('[db] ' + (konteks ? konteks + ': ' : '') + (kode || '-') + ' ' + mentah);
+
+  switch (kode) {
+    case 'P0001':
+      // RAISE EXCEPTION tanpa errcode dari fungsi PL/pgSQL. Pesannya sudah
+      // ditulis untuk dibaca orang -- misalnya "Tunggu 56 detik sebelum
+      // meminta kode lagi" -- jadi diteruskan apa adanya.
+      return mentah;
+    case '23505': {
+      // unique_violation
+      if (/users_email_key/.test(mentah)) {
+        return 'Email ini sudah dipakai akun lain.';
+      }
+      if (/users_phone_key/.test(mentah)) {
+        return 'Nomor WhatsApp ini sudah terdaftar.';
+      }
+      return 'Data ini sudah dipakai akun lain.';
+    }
+    case '23503':
+      return 'Data yang dimasukkan tidak lagi tersedia.';
+    case '23514':
+      return 'Format data tidak sesuai.';
+    case '22001':
+      return 'Data yang dimasukkan terlalu panjang.';
+    case '22P02':
+      return 'Format data tidak dikenali.';
+    default:
+      return 'Gagal menyimpan data. Coba lagi sebentar lagi.';
+  }
+}
+
 /* =============================================================================
    Pengiriman OTP
    ============================================================================= */
@@ -329,7 +370,7 @@ async function route(req, res, url) {
         untouched ? null : String(body.email || '').slice(0, 180)
       ]);
     } catch (err) {
-      return sendJson(res, 400, { error: err.message.replace(/^ERROR:\s*/, '') });
+      return sendJson(res, 400, { error: pesanDatabase(err, 'fn_update_profile') });
     }
 
     const u = saved.rows[0];
