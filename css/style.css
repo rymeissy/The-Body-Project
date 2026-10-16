@@ -1210,12 +1210,16 @@ a { color: var(--green-700); }
 }
 .dp__cell.is-off:hover { background: var(--cream-100); }
 
-/* Hari ini: ditandai garis bawah agar mudah dibedakan */
-.dp__cell.is-today .dp__num {
-  box-shadow: inset 0 -2px 0 var(--green-600);
+/* Hari ini: cincin di sekeliling sel, bukan garis bawah di bawah angka.
+   Titik penanda slot duduk di bawah angka (bottom: 5px) sedangkan angka berada
+   di tengah sel, jadi garis bawah keduanya cuma berbeda sekitar 7px dan
+   terbaca sebagai satu gumpalan. Cincin digambar di luar kotak sel sehingga
+   tidak mungkin bertabrakan dengan titik. */
+.dp__cell.is-today {
+  box-shadow: inset 0 0 0 2px var(--green-600);
 }
-.dp__cell.is-selected.is-today .dp__num {
-  box-shadow: inset 0 -2px 0 var(--green-200);
+.dp__cell.is-selected.is-today {
+  box-shadow: inset 0 0 0 2px var(--green-200);
 }
 
 .dp__cell.is-selected {
