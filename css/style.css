@@ -1454,12 +1454,17 @@ a { color: var(--green-700); }
   flex: 0 0 auto;
 }
 
-/* Sheet ubah profil: dua tombolnya dirapatkan ke kanan dengan lebar sama. */
+/* Sheet ubah profil: dua tombolnya dirapatkan ke kanan dengan lebar sama,
+   dan dinaikkan dari dasar layar. .sheet menempel di bottom: 0 sementara isi
+   sheet ini pendek sehingga tidak pernah menggulir -- tanpa jarak tambahan,
+   tombolnya duduk menempel di tepi bawah dan terasa jauh dari form di
+   atasnya. */
 #profileSheet .sheet__foot {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
 }
 #profileSheet .sheet__foot .btn { min-width: 104px; }
 
