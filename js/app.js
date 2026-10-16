@@ -1452,7 +1452,7 @@
         const res = await api('/api/auth/profile', { name }, token);
         saveSession(res.user, token);
         gate();
-        toast('Akun siap. Selamat datang, ' + res.user.name.split(' ')[0]);
+        toast('Selamat datang, ' + res.user.name.split(' ')[0]);
       } catch (err) {
         setError('fullName', 'errFullName', err.message);
       }
