@@ -64,6 +64,9 @@
       active ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
     });
 
+    // Bar judul situs hanya milik halaman Jadwal.
+    appShell.classList.toggle('has-header', name === 'schedule');
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1088,9 +1091,11 @@
 
     // Di luar cabang if/else: kartu paket dan halaman profil sama-sama
     // bergantung pada sesi, jadi keduanya dihitung ulang setiap kali
-    // status masuk berubah — bukan hanya saat masuk.
+    // status masuk berubah — bukan hanya saat masuk. Bar judul juga, karena
+    // init() tidak lewat switchView().
     renderPackageCard();
     applyProfileSessionState(isSignedIn());
+    appShell.classList.toggle('has-header', state.view === 'schedule');
   }
 
   /** Tampilkan layar masuk tanpa sempat menutup sesi. */

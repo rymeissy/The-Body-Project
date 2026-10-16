@@ -115,16 +115,27 @@ a { color: var(--green-700); }
   box-shadow: 0 0 0 1px var(--line);
 }
 
-/* ---------- 4. Header ---------- */
+/* ---------- 4. Header ----------
+   Bar ini jadi judul situs, jadi hanya ada di halaman Jadwal. Halaman lain
+   sudah punya judul sendiri sendiri (<h1> di .view-head), sehingga memunculkan
+   bar yang sama di sana hanya mengulang informasi. switchView() menandai
+   .app-shell dengan .has-header hanya saat Jadwal yang aktif.
+
+   Sengaja position: relative, bukan sticky. Bar ini behave seperti judul
+   halaman biasa: ikut naik dan turun bersama isi, tidak nempel di atas. */
 .app-header {
-  position: sticky;
-  top: 0;
+  display: none;
+  position: relative;
   z-index: 30;
   background: var(--green-800);
   color: var(--cream-50);
   padding: 14px 18px 16px;
   border-radius: 0 0 var(--r-lg) var(--r-lg);
   box-shadow: var(--sh-sm);
+}
+
+.app-shell.has-header .app-header {
+  display: block;
 }
 
 .app-header__top {
