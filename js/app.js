@@ -27,8 +27,20 @@
   const HARI_INI = toKey(new Date());
   const BULAN_INI = new Date().getMonth();
 
+  // Halaman yang terakhir dibuka disimpan supaya refresh tidak memundulkan
+  // pengguna ke Jadwal. switchView() menulisnya setiap kali tab diganti.
+  //
+  // Kuncinya dihapus saat logout (clearSession), jadi login berikutnya tetap
+  // mulai dari Jadwal. Dengan begitu refresh dan relogin bisa dibedakan tanpa
+  // flag tambahan: yang membedakan bukan cara aplikasinya dibuka, tapi apakah
+  // sesi sebelumnya masih ada.
+  const VIEW_AWAL = (() => {
+    try { return localStorage.getItem('tbp.view') || 'schedule'; }
+    catch { return 'schedule'; }
+  })();
+
   const state = {
-    view: 'schedule',
+    view: VIEW_AWAL,
     day: HARI_INI,
 
     // Awal jendela strip 7 hari. Dipisah dari day supaya memilih tanggal lain
@@ -69,6 +81,7 @@
      ====================================================================== */
   function switchView(name) {
     state.view = name;
+    try { localStorage.setItem('tbp.view', name); } catch { /* mode privat */ }
 
     $$('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
     $$('#tabbar button').forEach(b => {
@@ -1042,7 +1055,18 @@
       localStorage.removeItem(KEY);
       localStorage.removeItem(KEY_USER);
       localStorage.removeItem(KEY_TOKEN);
+      // Halaman terakhir ikut dihapus: sesi berikutnya adalah sesi baru,
+      // jadi harus mulai dari Jadwal, bukan melanjutkan halaman terakhir
+      // yang sedang dibuka.
+      localStorage.removeItem('tbp.view');
     } catch { /* abaikan */ }
+
+    // WAJIB reset state.view juga, bukan hanya kuncinya di localStorage.
+    // state hidup di memori dan bertahan selama tab terbuka. Kalau dibiarkan,
+    // gate() akan memanggil switchView(state.view) dengan nilai lama lalu
+    // menuliskannya kembali ke localStorage -- sehingga pengguna yang keluar
+    // dari Profil lalu login tanpa refresh akan kembali ke Profil.
+    state.view = 'schedule';
   }
 
   function signedInUser() {
@@ -1084,6 +1108,10 @@
     if (forced || isSignedIn()) {
       authScreen.hidden = true;
       appShell.hidden = false;
+      // Terapkan halaman yang tersimpan ke DOM. Bawaan HTML selalu
+      // view-schedule, jadi tanpa ini hasil refresh di halaman lain tidak
+      // pernah sampai ke layar meski state.view sudah dipulihkan.
+      switchView(state.view);
       // Mode demo sengaja tanpa email, supaya Profil terlihat sama persis
       // dengan akun baru yang belum pernah mengisinya.
       applyUserToProfile(forced ? { name: CUSTOMER.name, email: null,
