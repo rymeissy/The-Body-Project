@@ -298,6 +298,10 @@ async function route(req, res, url) {
         phone: user.phone,
         email: user.email,
         tier: user.membership_tier,
+        // Wajib dikirim, bukan hanya needsName. Full_name pada akun yang baru
+        // dibuat masih placeholder ("Pelanggan 7438"), jadi client tidak bisa
+        // menebak apakah nama itu sudah asli hanya dari isinya.
+        nameConfirmed: user.name_confirmed,
         since: new Date(user.member_since).toLocaleDateString('id-ID',
           { day: 'numeric', month: 'long', year: 'numeric' })
       }
@@ -333,6 +337,7 @@ async function route(req, res, url) {
       ok: true,
       user: {
         id: u.id, name: u.full_name, phone: u.phone, email: u.email,
+        nameConfirmed: u.name_confirmed,
         since: new Date(u.member_since).toLocaleDateString('id-ID',
           { day: 'numeric', month: 'long', year: 'numeric' })
       }
@@ -347,7 +352,7 @@ async function route(req, res, url) {
     if (!session) return sendJson(res, 401, { error: 'Sesi tidak valid' });
 
     const { rows } = await pool.query(
-      'SELECT id, full_name, phone, email, member_since FROM users WHERE id = $1',
+      'SELECT id, full_name, phone, email, name_confirmed, member_since FROM users WHERE id = $1',
       [session.id]);
 
     if (!rows.length) return sendJson(res, 401, { error: 'Akun tidak ditemukan' });
@@ -357,6 +362,7 @@ async function route(req, res, url) {
       ok: true,
       user: {
         id: u.id, name: u.full_name, phone: u.phone, email: u.email,
+        nameConfirmed: u.name_confirmed,
         since: new Date(u.member_since).toLocaleDateString('id-ID',
           { day: 'numeric', month: 'long', year: 'numeric' })
       }

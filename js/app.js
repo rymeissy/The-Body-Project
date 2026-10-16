@@ -1023,10 +1023,26 @@
 
   /* Mode ?demo=1 purposely leaves localStorage empty — it shows the app without
      a session. So "sudah masuk" means a real session exists, not merely that
-     the app shell is visible. */
+     the app shell is visible.
+
+     nameConfirmed wajib, bukan sekadar user.name. Right setelah OTP diverifikasi
+     akun sudah ada di database, tapi full_name-nya masih placeholder
+     ("Pelanggan 7438") — itu string truthy, sehingga versi lama menganggap
+     pengguna sudah masuk dan layar nama dilewati selamanya kalau halaman
+     di-refresh di tengah jalan. */
   function isSignedIn() {
     const user = signedInUser();
-    return Boolean(user && user.name);
+    return Boolean(user && user.name && user.nameConfirmed);
+  }
+
+  /* Sudah punya token tapi nama belum diisi. Ini kondisi antara "belum masuk"
+     dan "sudah masuk": akunnya ada, tinggal minta nama. Jangan dipaksa
+     mengulang OTP. */
+  function awaitingName() {
+    const user = signedInUser();
+    if (!user || user.nameConfirmed) return false;
+    try { return Boolean(localStorage.getItem(KEY_TOKEN)); }
+    catch { return false; }
   }
 
   /** Tampilkan aplikasi atau gerbang auth sesuai status sesi. */
@@ -1036,13 +1052,27 @@
     // ?demo=1 → lewati gerbang auth tanpa menyimpan sesi (dipakai preview.html)
     const forced = new URLSearchParams(location.search).get('demo') === '1';
 
-    if (forced || (user && user.name)) {
+    if (forced || isSignedIn()) {
       authScreen.hidden = true;
       appShell.hidden = false;
       // Mode demo sengaja tanpa email, supaya Profil terlihat sama persis
       // dengan akun baru yang belum pernah mengisinya.
       applyUserToProfile(forced ? { name: CUSTOMER.name, email: null,
                                     phone: CUSTOMER.phone, since: CUSTOMER.memberSince } : user);
+    } else if (awaitingName()) {
+      // Token masih hidup dan akun sudah dibuat — hanya nama yang belum. Kembalikan
+      // pengguna ke layar nama, jangan suruh mengulang OTP.
+      authScreen.hidden = false;
+      appShell.hidden = true;
+      document.body.style.overflow = '';
+      formLogin.reset();
+      formOtp.reset();
+      stopCountdown();
+      otpPayload = null;
+      $('#otpDemo').hidden = true;
+      $('#namePhone').textContent = user.phone;
+      $('#fullName').value = '';
+      setAuthForm('name');
     } else {
       authScreen.hidden = false;
       appShell.hidden = true;
