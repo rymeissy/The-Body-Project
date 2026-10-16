@@ -540,6 +540,17 @@ a { color: var(--green-700); }
   margin-bottom: 14px;
 }
 
+/* Wadah pill + daftar. Keduanya perlu satu blok supaya daftar bisa
+   diposisikan relatif terhadap pill, bukan terhadap baris atas. Batas
+   max-width pindah ke sini: kalau tetap di .branch-pill, persentasenya
+   dihitung terhadap .branch-pick yang ukurannya justru ditentukan oleh
+   pill -- jadi saling menunggu dan tidak pernah terbatasi. */
+.branch-pick {
+  position: relative;
+  min-width: 0;
+  max-width: 62%;
+}
+
 .branch-pill {
   display: inline-flex;
   align-items: center;
@@ -550,17 +561,127 @@ a { color: var(--green-700); }
   color: var(--ink-900);
   background: var(--cream-200);
   border-radius: var(--r-full);
-  max-width: 62%;
+  max-width: 100%;
   transition: background .16s ease;
 }
+.branch-pill[aria-expanded="true"] { background: var(--cream-300); }
 .branch-pill:hover { background: var(--cream-300); }
-.branch-pill__icon { color: var(--green-700); font-size: 11px; }
-.branch-pill__caret { opacity: .5; font-size: 9px; }
+
+/* Ikon pin lokasi — SVG, bukan karakter.
+
+   Sebelumnya U+25C9 (◉ "fisheye"), yaitu lingkaran pekat. Di 11px dia
+   terbaca sebagai titik berburu-buru, bukan lokasi -- dan tidak ada ujung
+   runcing di bawahnya yang jadi penanda arah. SVG-nya badan tetesan
+   dengan lubang di tengah: berlubang dan runcing ke bawah, yang tepat
+   untuk "cabang studio mana yang sedang dipilih".
+
+   15px dengan stroke-width 2 memberi garis efektif sekitar 1,25px,
+   cukup tebal di layar 1x dan tidak berubah di layar 2x. */
+.branch-pill__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--green-700);
+}
+
+/* Segitiga dropdown.
+
+   Sebelumnya 9px dengan opacity .5 -- pada ukuran itu isinya cuma
+   beberapa piksel tinta dan langsung pudar di atas pill, sehingga tidak
+   terbaca sebagai sesuatu yang bisa diklik. Dinaikkan ke 13px dan
+   pudarnya dikurangi supaya jelas sebagai penanda "pilih dari daftar",
+   bukan sekadar hiasan. */
+.branch-pill__caret {
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+  opacity: .6;
+}
 .branch-pill span:not([aria-hidden]) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Daftar cabang.
+
+   absolute terhadap .branch-pick, jadi menempel di bawah pill tanpa
+   mengambil ruang vertikal -- kalender dan daftar kelas di bawahnya tetap
+   di tempatnya ketika daftar ini dibuka.
+
+   min-width 236px: nama cabang terpanjang ("Grand Indonesia", "Senopati
+   Sanctuary") tidak muat di pill yang bisa sesempit ini, dan daftar yang
+   sempit membuat barisnya berdesakan.
+
+   Batas lebar ada dua. 298px supaya di kolom 512px daftar tidak menutupi
+   seluruh isi, dan calc(100vw - 36px) supaya tidak keluar kolom di layar
+   sempit -- 36px adalah dua kali padding horizontal isi (.view), jadi di
+   320px daftar turun ke 284px dan tetap muat. min-width ikut dibungkus
+   min() supaya bisa menyusut juga kalau layarnya lebih kecil lagi,
+   bukan memaksa diri melebihi ruang yang ada.
+
+   z-index 35: di atas konten halaman (yang 30), di bawah sheet (40/41)
+   dan navigasi bawah. Kalau lebih tinggi, daftar akan menimpa sheet
+   yang kebetulan sedang terbuka. */
+.branch-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 35;
+  min-width: min(236px, calc(100vw - 36px));
+  max-width: min(298px, calc(100vw - 36px));
+  max-height: 304px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-lg);
+}
+.branch-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border-radius: var(--r-sm);
+  transition: background .14s ease;
+}
+.branch-item:hover,
+.branch-item:focus-visible { background: var(--cream-100); outline: none; }
+.branch-item[aria-checked="true"] { background: var(--green-50); }
+.branch-item__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Centang penanda pilihan. Ruangnya dijaga selalu ada supaya nama
+   cabang tidak bergeser kiri-kanan saat baris lain dipilih.
+
+   align-items kembali ke center: begitu baris kedua (meta) dihapus,
+   nama jadi satu-satunya isi baris, sehingga menengahkan badannya sama
+   dengan menyejajarkan teksnya dengan nama.
+
+   Padding baris diturunkan dari 9px ke 6px supaya sembilan baris
+   semuanya muat di dalam max-height 304px tanpa perlu digulir. Dengan
+   9px tinggi baris 36px, sembilan baris jadi 336px dan daftar
+   terpotong -- padahal daftar yang pendek justru lebih enak: semua
+   pilihan terlihat tanpa harus menebak ada isi di bawahnya. */
+.branch-item__check {
+  flex: 0 0 auto;
+  width: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--green-700);
+  opacity: 0;
+}
+.branch-item[aria-checked="true"] .branch-item__check { opacity: 1; }
 
 .open-status {
   display: inline-flex;
@@ -701,6 +822,22 @@ a { color: var(--green-700); }
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
+}
+/* Ikon kalender: inline SVG, bukan karakter.
+
+   Karakter U+25A6 (▦) yang dipakai sebelumnya adalah "square with
+   orthogonal crosshatch fill" -- glyph grid, bukan kalender. Di 17px
+   crosshatch-nya berubah jadi blok padat dan terbaca seperti kode QR.
+   Seluruh ikon lain di aplikasi ini masih berupa karakter, jadi ini
+   satu-satunya SVG; bedanya, bentuknya benar dan tidak bergantung pada
+   font yang kebetulan terpasang.
+
+   currentColor membuatnya otomatis mengikuti .cal-title, dan aria-hidden
+   karena teks "Oktober 2026" di sebelahnya sudah menyebut bulannya --
+   pembaca layar tidak perlu pengulangan kata "kalender". */
+.cal-title__icon {
+  flex: 0 0 auto;
+  display: block;
 }
 .cal-link {
   display: inline-flex;
@@ -1570,6 +1707,106 @@ a { color: var(--green-700); }
 .pay:hover { border-color: var(--green-200); }
 .pay.is-selected { border-color: var(--green-600); background: var(--green-50); }
 .pay__logo { font-size: 15px; }
+
+/* Opsi top up — turunan .option, bukan gaya baru.
+
+   .option yang ada Compact: radio, judul, satu sub-baris, harga. Itu
+   cukup untuk paket dan metode bayar, tapi tidak untuk top up yang
+   katalognya punya daftar benefit. Menumpuk tiga kartu harga mendatar
+   seperti di halaman harga publik juga tidak mungkin -- kolom app 512px,
+   jadi tiap kartu jadi sekitar 110px dan judulnya tinggal dua kata per
+   baris.
+
+   Karena itu top up tetap memakai .option (radio, border, is-selected,
+   hover) dan hanya menambah blok di dalamnya. Tidak ada cara kedua
+   untuk "pilih satu dari beberapa" di aplikasi ini.
+
+   Kontennya memakai span, bukan ul/li: option-nya sebuah <button>, dan
+   button hanya boleh memuat konten frasa -- bukan elemen blok. Semua
+   blok di bawah karena itu display:block/grid di dalam span. */
+.option--topup {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.topup__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 14px 0;
+}
+.topup__head .option__radio { margin-top: 0; }
+.topup__tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+.topup__badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  background: var(--green-100);
+  color: var(--green-800);
+}
+.topup__populer {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  background: var(--green-700);
+  color: var(--cream-50);
+}
+.topup__title {
+  display: block;
+  padding: 7px 14px 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.topup__desc {
+  display: block;
+  padding: 4px 14px 0;
+  font-size: 11px;
+  color: var(--ink-400);
+}
+.topup__list {
+  display: grid;
+  gap: 6px;
+  padding: 11px 14px 0;
+}
+.topup__item {
+  display: flex;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ink-600);
+  line-height: 1.5;
+}
+.topup__item > span:first-child { color: var(--green-600); flex: 0 0 auto; }
+.topup__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  padding: 11px 14px;
+  background: var(--cream-100);
+  border-top: 1px solid var(--line);
+}
+.option.is-selected .topup__foot {
+  background: var(--green-50);
+  border-top-color: var(--green-200);
+}
+.topup__price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green-800);
+}
+.topup__unit { font-size: 10px; font-weight: 500; color: var(--ink-400); }
+.topup__per   { font-size: 11px; color: var(--ink-400); white-space: nowrap; }
 
 /* Ringkasan pembayaran */
 .summary {

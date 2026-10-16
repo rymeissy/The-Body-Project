@@ -443,12 +443,21 @@ const JADWAL_MINGGUAN = [
    masih Aktif. */
 const VALIDITAS_HARI = { p10: 180, p5: 90 };
 
+/* Paket yang dimiliki pengguna.
+
+   validityDays disimpan di sini, bukan diturunkan dari expires, karena
+   expires disimpan sebagai teks ringkas ("8 Okt 2026") untuk langsung
+   ditampilkan. Kalau top up perlu memperpanjang masa berlaku, teks itu
+   harus diurai dulu -- dan mengurai tanggal dari teks yang sudah diformat
+   menghasilkan tanggal yang rapuh. Angkanya yang disimpan; teksnya yang
+   diturunkan. */
 const PACKAGES = [
   {
     id: 'p10',
     name: 'Paket 10 Sesi Pilates',
     status: 'Aktif',
     total: 10, remaining: 6,
+    validityDays: VALIDITAS_HARI.p10,
     expires: ringkasTanggal(tanggalRelatif(VALIDITAS_HARI.p10)),
     includes: 'Termasuk Reformer & Cadillac',
     price: 3250000
@@ -458,6 +467,7 @@ const PACKAGES = [
     name: 'Paket 5 Sesi Pilates Group',
     status: 'Habis',
     total: 5, remaining: 0,
+    validityDays: VALIDITAS_HARI.p5,
     expires: ringkasTanggal(tanggalRelatif(VALIDITAS_HARI.p5)),
     includes: 'Termasuk Mat Flow',
     price: 1750000
@@ -483,6 +493,70 @@ const TYPE_LABELS = {
 };
 
 const DROPIN_PRICE = 375000;
+
+/* Katalog top up sesi — prototype.
+
+   Berdampingan dengan PACKAGES, bukan bagiannya: paket yang dibeli orang
+   adalah paket utuh dengan masa berlaku sendiri, sedangkan top up menambah
+   kuota ke paket yang sudah dimiliki. Jadi katalognya terpisah, dan ui
+   menampilkan efeknya ("bertambah N sesi ke Paket 10 Sesi") sebagai
+   keterangan, bukan sebagai syarat.
+
+   Sesi ditambahkan ke paket AKTIF -- paket milik pengguna yang sedang
+   berjalan, bukan paket sembarangan. Kalau paket aktif sudah habis
+   kuotanya, tombol top up tetap boleh dipakai: sisa sesi nol bukan
+   berarti paket sudah tutup, dan masa berlakunya masih memberi ruang
+   untuk menambah kuota.
+
+   Badge hemat dihitung dari DROPIN_PRICE, bukan ditulis tangan, supaya
+   tidak bisa melenceng dari harga yang benar-benar ditampilkan. Diskonto
+   selalu terhadap harga sesi satuan drop-in, bukan terhadap harga paket,
+   supaya angkanya bisa dibandingkan apples to apples.
+
+   Letakkan setelah DROPIN_PRICE karena pemetaan di bawah membacanya; const
+   tidak bisa dibaca sebelum baris deklarasinya. */
+const TOPUP_OPTIONS = [
+  {
+    id: 'tu5',
+    name: 'Top Up 5 Sesi',
+    tag: 'Top Up',
+    sessions: 5,
+    price: 1625000,
+    validDays: 90,
+    includes: [
+      'Bertambah 5 sesi pada paket aktif',
+      'Berlaku 90 hari sejak dibayar',
+      'Bisa dipakai semua kelas group'
+    ]
+  },
+  {
+    id: 'tu10',
+    name: 'Top Up 10 Sesi',
+    tag: 'Top Up',
+    sessions: 10,
+    price: 3000000,
+    validDays: 180,
+    popular: true,
+    includes: [
+      'Bertambah 10 sesi pada paket aktif',
+      'Berlaku 180 hari sejak dibayar',
+      'Bisa dibagikan ke 1 teman'
+    ]
+  },
+  {
+    id: 'tu20',
+    name: 'Top Up 20 Sesi',
+    tag: 'Top Up',
+    sessions: 20,
+    price: 5400000,
+    validDays: 365,
+    includes: [
+      'Bertambah 20 sesi pada paket aktif',
+      'Berlaku 365 hari sejak dibayar',
+      'Gratis 1 sesi FREE Freeze Kuota'
+    ]
+  }
+].map(t => ({ ...t, hemat: Math.round((1 - (t.price / t.sessions) / DROPIN_PRICE) * 100) }));
 
 /* Data cabang — placeholder prototype.
 /* Data cabang — placeholder prototype.

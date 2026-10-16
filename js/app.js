@@ -62,7 +62,12 @@
     klass: null,
     payMode: null,   // 'package' | 'dropin' | 'waitlist'
     packageId: null,
-    paymentId: 'qris'
+    paymentId: 'qris',
+
+    // Alur top up. step dipakai bersama dengan pemesanan karena kedua sheet
+    // tidak pernah terbuka bersamaan, jadi hanya satu yang bisa berjalan --
+    // status langkahnya tidak perlu dua tempat.
+    topupId: null
   };
 
   /* ---------- Toast ---------- */
@@ -217,17 +222,120 @@
       </div>`;
 
     $$('[data-topup]').forEach(btn => {
-      btn.addEventListener('click', () => toast('Top up sesi segera hadir'));
+      btn.addEventListener('click', openTopUp);
     });
   }
 
-  // Branch switch di baris atas — memutar lewat 8 cabang
-  $('#branchSwitch').addEventListener('click', () => {
-    const current = BRANCH_DETAILS.findIndex(
-      b => b.name === $('#branchName').textContent.trim());
-    const next = BRANCH_DETAILS[(current + 1) % BRANCH_DETAILS.length];
-    applyBranchFilter(next.id, true);
-    toast('Cabang diubah ke ' + next.name);
+  /* ---------- Dropdown cabang ----------
+
+     Sebelumnya satu klik langsung memutar ke cabang berikutnya
+     (BRANCH_DETAILS[(current + 1) % ...]). Itu perilaku satu tombol
+     "putar", bukan dropdown -- dan ikon segitiga di pilnya sudah
+     menjanjikan ada daftar. Dengan 8 cabang, memutar berarti satu
+     klik melompat ke studio yang jauh dan mengganti seluruh daftar
+     kelas tanpa ada pilihan.
+
+     Sekarang klik membuka daftar, dan baru baris yang dipilih yang
+     mengubah cabang. */
+
+  const branchBtn  = $('#branchSwitch');
+  const branchMenu = $('#branchMenu');
+
+  /** Baris daftar: "Semua Cabang" dulu, baru cabang-cabangnya.
+
+     "Semua Cabang" bukan tambahan hiasan -- state.branch mulai dari
+     'all', jadi tanpa baris ini tidak ada jalan kembali ke tampilan
+     semua studio setelah pengguna memilih satu cabang.
+
+     Yang ditampilkan hanya nama. Awalnya tiap baris membawa baris kedua
+     berisi area, jarak, dan jumlah sesi tanggal itu -- tapi di daftar
+     sembilan baris angka-angka itu lebih banyak mengganggu
+     daripada menolong: yang sudah jelas terbaca dari nama studio, dan
+     jumlah sesinya sudah diketahui dari daftar kelas di bawahnya.
+
+     Label "Flagship" juga dihapus dari sini karena penanda itu sudah ada
+     di kartu cabang, dan mengulanginya di daftar cuma menambah noise. */
+  function branchRows() {
+    return [{ id: 'all', name: 'Semua Cabang' }]
+      .concat(BRANCH_DETAILS.map(b => ({ id: b.id, name: b.name })));
+  }
+
+  function renderBranchMenu() {
+    branchMenu.innerHTML = branchRows().map(b => {
+      const aktif = state.branch === b.id;
+      return `
+        <button class="branch-item" type="button" role="menuitemradio"
+                aria-checked="${aktif}" data-branch="${b.id}">
+          <span class="branch-item__name">${b.name}</span>
+          <span class="branch-item__check" aria-hidden="true">✓</span>
+        </button>`;
+    }).join('');
+
+    $$('[data-branch]', branchMenu).forEach(el => {
+      el.addEventListener('click', () => {
+        applyBranchFilter(el.dataset.branch, true);
+        closeBranchMenu();
+        branchBtn.focus();
+        if (el.dataset.branch !== 'all') {
+          toast('Cabang diubah ke ' + branchName(el.dataset.branch));
+        }
+      });
+    });
+  }
+
+  function openBranchMenu() {
+    renderBranchMenu();
+    branchMenu.hidden = false;
+    branchBtn.setAttribute('aria-expanded', 'true');
+
+    // Fokus ke baris yang sedang terpilih, bukan ke baris pertama, supaya
+    // pengguna tidak sempat menekan panah atas tanpa sadar dan
+    // pilihannya sudah bergeser sebelum dia melihat daftarnya.
+    const aktif = branchMenu.querySelector('[aria-checked="true"]');
+    (aktif || branchMenu.querySelector('.branch-item')).focus();
+  }
+
+  function closeBranchMenu() {
+    branchMenu.hidden = true;
+    branchBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleBranchMenu() {
+    if (branchMenu.hidden) openBranchMenu();
+    else closeBranchMenu();
+  }
+
+  branchBtn.addEventListener('click', toggleBranchMenu);
+
+  // ArrowUp/ArrowDown memindah pilihan di dalam daftar; Home/End ke ujung.
+  branchMenu.addEventListener('keydown', e => {
+    const item = [].slice.call(branchMenu.querySelectorAll('.branch-item'));
+    const i = item.indexOf(document.activeElement);
+    if (i < 0) return;
+
+    let next = null;
+    if (e.key === 'ArrowDown')      next = item[(i + 1) % item.length];
+    if (e.key === 'ArrowUp')        next = item[(i - 1 + item.length) % item.length];
+    if (e.key === 'Home')           next = item[0];
+    if (e.key === 'End')            next = item[item.length - 1];
+    if (!next) return;
+
+    e.preventDefault();
+    next.focus();
+  });
+
+  // Escape menutup dan mengembalikan fokus ke pill.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || branchMenu.hidden) return;
+    closeBranchMenu();
+    branchBtn.focus();
+  });
+
+  // Klik di luar daftar menutupnya.
+  document.addEventListener('click', e => {
+    if (branchMenu.hidden) return;
+    if (branchMenu.contains(e.target) || branchBtn.contains(e.target)) return;
+    closeBranchMenu();
   });
 
   /* ---------- Date picker (kalender bulanan) ---------- */
@@ -567,7 +675,12 @@
 
     if (updateSwitcher) {
       const b = BRANCH_DETAILS.find(x => x.id === id);
-      $('#branchName').textContent = b ? b.name : id;
+
+      // 'all' tidak ada di BRANCH_DETAILS, jadi find() mengembalikan
+      // undefined dan tanpa penanganan ini pill akan menampilkan literal
+      // "all". Jam buka juga tidak ikut berubah: saat semua studio
+      // ditampilkan, tidak ada satu jam buka pun yang benar.
+      $('#branchName').textContent = b ? b.name : 'Semua Cabang';
       if (b) $('#openHours').textContent = b.hours;
     }
 
@@ -665,22 +778,35 @@
     setTimeout(() => { sheet.hidden = true; }, 280);
   }
 
-  backdrop.addEventListener('click', closeSheet);
+  /* Tiga sheet memakai satu backdrop dan satu kunci Escape, jadi penutupan
+     ditulis sebagai "tutup yang sedang terbuka" alih-alih menutup ketiganya.
+     Menutup yang tidak terbuka akan menjalankan animasi keluar di atas sheet
+     yang masih tampil -- backdropnya ikut hilang dan layar terkunci. */
+  function closeAnySheet() {
+    if (sheet.classList.contains('is-open'))      { closeSheet();      return; }
+    if (topupSheet.classList.contains('is-open')) { closeTopUpSheet(); return; }
+  }
+
+  backdrop.addEventListener('click', closeAnySheet);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet();
+    if (e.key === 'Escape') closeAnySheet();
   });
 
-  /* Baris langkah: tiga blok di kiri-tengah-kanan, disambung dua garis.
+  /* Baris langkah: blok di kiri-tengah-kanan, disambung garis.
 
      Garis dibuat sebagai saudara sejajar dari tiap .step, bukan ::after di
      dalamnya. Kalau garis ada di dalam langkah, panjangnya terikat lebar
      langkah itu sendiri sehingga tidak bisa melewati batasnya -- akibatnya
-     langkah pertama, kedua, dan ketiga hanya bisa duduk di 0, 1/3, dan 2/3
-     dari baris, bukan di kiri, tengah, dan kanan. Sebagai saudara, kedua
-     garis berbagi sisa ruang sama rata (flex: 1 1 0) dan jaraknya ikut gap
-     yang sama untuk semua. */
-  function stepsBar() {
-    const labels = ['Pilih Paket', 'Data', 'Bayar'];
+     langkah hanya bisa duduk di 0, 1/3, dan 2/3 dari baris, bukan di kiri,
+     tengah, dan kanan. Sebagai saudara, setiap garis berbagi sisa ruang
+     sama rata (flex: 1 1 0) dan jaraknya ikut gap yang sama untuk semua.
+
+     Label-nya lewat parameter karena tidak semua alur punya jumlah langkah
+     yang sama: pemesanan tiga langkah, top up dua. Memaksakan tiga label
+     di alur dua langkah akan menampilkan langkah yang tidak pernah ada. */
+  const LANGKAH_PEMESANAN = ['Pilih Paket', 'Data', 'Bayar'];
+
+  function stepsBar(labels = LANGKAH_PEMESANAN) {
     const kelas = n => n === state.step ? 'is-active' : n < state.step ? 'is-done' : '';
 
     let html = '';
@@ -1008,6 +1134,292 @@
             : state.payMode === 'dropin'
               ? 'Pembayaran berhasil — e-ticket diterbitkan'
               : 'Kursi dipesan dari kuota paket');
+        }
+      });
+    });
+  }
+
+  /* ======================================================================
+     BOTTOM SHEET: TOP UP SESI
+     ---------------------------------------------------------------------
+     Dua langkah, bukan tiga seperti pemesanan. Pemesanan butuh langkah
+     "Data Peserta" karena nama, email, dan nomor bisa berubah antara
+    pilih paket dan bayar; top up tidak butuh itu karena tidak ada yang
+     dipesan perorangan dan tidak ada kursi yang perlu diamankan.
+
+     Sesi hasil top up masuk ke paket AKTIF. Kalau tidak ada paket sama
+     sekali -- atau yang aktif berstatus habis -- sheet ini tidak dibuka
+     dan tombolnya tetap nonaktif, karena menambah kuota ke sesuatu yang
+     tidak ada tidak punya arti.
+     ====================================================================== */
+  const topupSheet = $('#topupSheet');
+
+  /** Paket yang sedang berjalan: paling banyak sisa sesi, tie-break masa
+      berlaku yang paling panjang. Kalau tidak ada yang punya sisa sesi,
+      paket yang massanya masih paling panjang supaya tombol top up tetap
+      punya tempat untuk menitipkan kuotanya. */
+  function paketAktif() {
+    const hidup = PACKAGES.filter(p => p.remaining > 0);
+    if (hidup.length) {
+      return hidup.sort((a, b) =>
+        b.remaining - a.remaining ||
+        b.validityDays - a.validityDays)[0];
+    }
+    return [...PACKAGES].sort((a, b) => b.validityDays - a.validityDays)[0];
+  }
+
+  /** Sisa sesi paket aktif, atau null kalau tidak ada yang bisa di-top up. */
+  function sisaPaketAktif() {
+    const p = paketAktif();
+    if (!p || p.status === 'Tutup') return null;
+    return p;
+  }
+
+  function openTopUp() {
+    const p = sisaPaketAktif();
+    if (!p) { toast('Belum ada paket aktif'); return; }
+
+    state.step = 1;
+    state.topupId = null;
+    state.paymentId = 'qris';
+
+    topupSheet.hidden = false;
+    requestAnimationFrame(() => {
+      backdrop.classList.add('is-open');
+      topupSheet.classList.add('is-open');
+    });
+    renderTopUp();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeTopUpSheet() {
+    backdrop.classList.remove('is-open');
+    topupSheet.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(() => { topupSheet.hidden = true; }, 280);
+  }
+
+  /* ---------- Langkah 1: pilih catalogue top up ---------- */
+  const LANGKAH_TOPUP = ['Pilih Top Up', 'Bayar'];
+
+  function topUpStepOne() {
+    const p = paketAktif();
+
+    const opsi = TOPUP_OPTIONS.map(t => {
+      const pilih = state.topupId === t.id;
+      const perSesi = rupiah(Math.round(t.price / t.sessions));
+
+      return `
+        <button class="option option--topup ${pilih ? 'is-selected' : ''}"
+                type="button" data-topup-pick="${t.id}">
+          <span class="topup__head">
+            <span class="option__radio" aria-hidden="true">✓</span>
+            <span class="topup__tag">${t.tag}</span>
+            <span class="topup__badge">Hemat ${t.hemat}%</span>
+            ${t.popular ? '<span class="topup__populer">Paling Populer</span>' : ''}
+          </span>
+
+          <span class="topup__title">${t.name}</span>
+          <span class="topup__desc">${t.sessions} sesi masuk ke ${p.name}</span>
+
+          <span class="topup__list">
+            ${t.includes.map(i => `
+              <span class="topup__item">
+                <span aria-hidden="true">✓</span><span>${i}</span>
+              </span>`).join('')}
+          </span>
+
+          <span class="topup__foot">
+            <span class="topup__price">${rupiah(t.price)}<span class="topup__unit"> /paket</span></span>
+            <span class="topup__per">${perSesi} /sesi</span>
+          </span>
+        </button>`;
+    }).join('');
+
+    return `
+      ${stepsBar(LANGKAH_TOPUP)}
+
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel__head"><span class="panel__title">Paket Tujuan</span>
+          <span class="tag tag--level">${p.remaining}/${p.total} tersisa</span>
+        </div>
+        <div class="panel__body">
+          <div style="font-size:15px;font-weight:600;">${p.name}</div>
+          <div style="font-size:12px;color:var(--ink-400);margin-top:3px;">
+            Sesi tambahan akan menambah kuota paket ini, bukan membuat paket baru.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel__title" style="margin-bottom:10px;">Pilih Top Up</div>
+      ${opsi}`;
+  }
+
+  /* ---------- Langkah 2: pembayaran ---------- */
+  function topUpStepTwo() {
+    const t = TOPUP_OPTIONS.find(x => x.id === state.topupId);
+    const p = paketAktif();
+    const metode = PAYMENT_METHODS.find(x => x.id === state.paymentId);
+
+    return `
+      ${stepsBar(LANGKAH_TOPUP)}
+
+      <div class="panel__title" style="margin-bottom:10px;">Pilih Metode Pembayaran</div>
+      <div class="pay-grid" style="margin-bottom:16px;">
+        ${PAYMENT_METHODS.map(x => `
+          <button class="pay ${state.paymentId === x.id ? 'is-selected' : ''}"
+                  type="button" data-pay="${x.id}">
+            <span class="pay__logo" aria-hidden="true">${x.logo}</span>
+            <span>
+              <span style="display:block;font-weight:600;">${x.label}</span>
+              <span style="display:block;font-size:10px;color:var(--ink-400);">${x.desc}</span>
+            </span>
+          </button>`).join('')}
+      </div>
+
+      <div class="summary">
+        <div class="panel__title">Ringkasan Top Up</div>
+        <div class="kv" style="border:0; padding-bottom:0;">
+          <dt>${t.name}</dt><dd>${t.sessions} sesi</dd>
+        </div>
+        <div class="kv"><dt>Masuk ke</dt><dd>${p.name}</dd></div>
+        <div class="kv"><dt>Kuota setelah top up</dt><dd>${p.remaining + t.sessions} dari ${p.total + t.sessions} sesi</dd></div>
+        <div class="kv"><dt>Berlaku sampai</dt><dd>${ringkasTanggal(tanggalRelatif(t.validDays))}</dd></div>
+        <div class="kv"><dt>Metode</dt><dd>${metode.label}</dd></div>
+        <div class="summary__total">
+          <span style="font-size:13px;color:var(--ink-600);">Total</span>
+          <strong>${rupiah(t.price)}</strong>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- Langkah 3: sukses ---------- */
+  function topUpSuccess() {
+    const t = TOPUP_OPTIONS.find(x => x.id === state.topupId);
+    const p = paketAktif();
+
+    return `
+      <div class="success">
+        <div class="success__mark" aria-hidden="true">✓</div>
+        <h3>Top Up Berhasil</h3>
+        <p>${t.sessions} sesi sudah ditambahkan ke ${p.name}. Masa berlaku paket
+           sekarang ${p.expires}.</p>
+      </div>
+
+      <div class="ticket">
+        <dl style="margin:0;">
+          <div class="kv" style="border:0;padding-bottom:0;"><dt>Top up</dt><dd><strong>${t.name}</strong></dd></div>
+          <div class="kv"><dt>Sesi ditambahkan</dt><dd>${t.sessions} sesi</dd></div>
+          <div class="kv"><dt>Kuota sekarang</dt><dd>${p.remaining} dari ${p.total} sesi</dd></div>
+          <div class="kv"><dt>Berlaku sampai</dt><dd>${p.expires}</dd></div>
+          <div class="kv"><dt>Total dibayar</dt><dd>${rupiah(t.price)}</dd></div>
+        </dl>
+      </div>`;
+  }
+
+  /* ---------- Render ---------- */
+  function renderTopUp() {
+    const p = paketAktif();
+
+    $('#topupSheetSub').textContent =
+      `Menambah kuota ke ${p.name} · berlaku ${p.remaining}/${p.total} sesi`;
+
+    const body = $('#topupBody');
+    const foot = $('#topupFoot');
+
+    if (state.step === 1) { body.innerHTML = topUpStepOne();  foot.innerHTML = topUpFootOne(); }
+    if (state.step === 2) { body.innerHTML = topUpStepTwo();  foot.innerHTML = topUpFootTwo(); }
+    if (state.step === 3) { body.innerHTML = topUpSuccess();  foot.innerHTML = topUpFootThree(); }
+
+    bindTopUp();
+    body.scrollTop = 0;
+  }
+
+  function topUpFootOne() {
+    const siap = state.topupId !== null;
+    return `<button class="btn btn--primary btn--block" type="button" data-act="next"
+                    ${siap ? '' : 'disabled style="opacity:.45;"'}>
+              Lanjut <span aria-hidden="true">→</span>
+            </button>`;
+  }
+
+  function topUpFootTwo() {
+    const t = TOPUP_OPTIONS.find(x => x.id === state.topupId);
+    return `<button class="btn btn--ghost btn--block" type="button" data-act="back" style="margin-bottom:8px;">
+              Kembali
+            </button>
+            <button class="btn btn--primary btn--block" type="button" data-act="pay">
+              Bayar ${rupiah(t.price)}
+            </button>`;
+  }
+
+  function topUpFootThree() {
+    return `<button class="btn btn--primary btn--block" type="button" data-act="close">Selesai</button>`;
+  }
+
+  function bindTopUp() {
+    $$('#topupBody [data-topup-pick]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.topupId = el.dataset.topupPick;
+        renderTopUp();
+      });
+    });
+
+    $$('#topupBody [data-pay]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.paymentId = el.dataset.pay;
+        renderTopUp();
+      });
+    });
+
+    $$('#topupFoot [data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.act;
+
+        if (act === 'next') {
+          if (!state.topupId) return;
+          state.step = 2;
+          renderTopUp();
+          return;
+        }
+
+        if (act === 'back') { state.step = 1; renderTopUp(); return; }
+
+        if (act === 'close') {
+          closeTopUpSheet();
+          switchView('schedule');
+          return;
+        }
+
+        if (act === 'pay') {
+          const t = TOPUP_OPTIONS.find(x => x.id === state.topupId);
+          const p = paketAktif();
+
+          // Sesi dan masa berlaku bertambah bareng. Menambah sesi tanpa
+          // menambah masa berlaku akan membuat kuota baru yang hangus
+          // sebelum sempat dipakai -- jadi keduanya satu paket.
+          p.remaining += t.sessions;
+          p.total    += t.sessions;
+          p.expires   = ringkasTanggal(tanggalRelatif(t.validDays));
+          p.status    = 'Aktif';
+
+          HISTORY.unshift({
+            id: 'h' + Date.now(),
+            icon: '+',
+            title: t.name,
+            sub: `${p.name} · ${t.sessions} sesi · berlaku s.d. ${p.expires}`,
+            side: rupiah(t.price),
+            sideType: 'done'
+          });
+
+          renderPackageCard();
+          renderPackages();
+          renderHistory();
+
+          state.step = 3;
+          renderTopUp();
+
+          toast(`${t.sessions} sesi ditambahkan ke ${p.name}`);
         }
       });
     });

@@ -144,11 +144,25 @@
 
     <!-- Baris atas: cabang + status buka -->
     <div class="sch-topbar">
-      <button class="branch-pill" id="branchSwitch" type="button" aria-label="Ganti cabang">
-        <span class="branch-pill__icon" aria-hidden="true">◉</span>
-        <span id="branchName">Senopati Sanctuary</span>
-        <span class="branch-pill__caret" aria-hidden="true">▾</span>
-      </button>
+      <div class="branch-pick">
+        <button class="branch-pill" id="branchSwitch" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="branchMenu">
+          <span class="branch-pill__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <span id="branchName">Semua Cabang</span>
+          <span class="branch-pill__caret" aria-hidden="true">▾</span>
+        </button>
+
+        <!-- Daftar cabang. hidden dikendalikan JS; isinya dirender dari
+             BRANCH_DETAILS supaya tidak ada cabang yang tertulis mati di
+             markup dan bisa terlewat dari daftar. -->
+        <div class="branch-menu" id="branchMenu" role="menu" aria-label="Pilih cabang" hidden></div>
+      </div>
       <p class="open-status">
         <span class="dot-live" aria-hidden="true"></span>
         Studio Buka <span aria-hidden="true">•</span>
@@ -161,7 +175,18 @@
 
     <!-- Kalender -->
     <div class="cal-head">
-      <h2 class="cal-title"><span aria-hidden="true">▦</span> Oktober 2026</h2>
+      <h2 class="cal-title">
+        <svg class="cal-title__icon" viewBox="0 0 24 24" width="17" height="17"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true" focusable="false">
+          <rect x="3.25" y="4.75" width="17.5" height="16" rx="2.5"/>
+          <path d="M3.25 9.75h17.5"/>
+          <path d="M8 2.75v4"/>
+          <path d="M16 2.75v4"/>
+        </svg>
+        Oktober 2026
+      </h2>
       <button class="cal-link" type="button" id="calLink">
         Lihat Kalender <span aria-hidden="true">›</span>
       </button>
@@ -361,6 +386,20 @@
     <button class="btn btn--ghost" type="button" id="editCancelBtn">Batal</button>
     <button class="btn btn--primary" type="button" id="editSaveBtn">Simpan</button>
   </div>
+</section>
+
+<!-- ===================== BOTTOM SHEET: TOP UP SESI ===================== -->
+<section class="sheet" id="topupSheet" role="dialog" aria-modal="true" aria-labelledby="topupSheetTitle" hidden>
+  <div class="sheet__grip"></div>
+
+  <div class="sheet__head">
+    <h2 id="topupSheetTitle">Top Up Sesi</h2>
+    <p id="topupSheetSub"></p>
+  </div>
+
+  <div class="sheet__body" id="topupBody"></div>
+
+  <div class="sheet__foot" id="topupFoot"></div>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
