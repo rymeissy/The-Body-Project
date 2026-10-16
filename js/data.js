@@ -35,10 +35,7 @@ const INSTRUCTORS = [
 
    Tanggal lampau tidak dapat dipilih (kelas sudah lewat), tetapi tanggal
    masa depan tetap bisa — pelanggan mem-booking jauh sebelum hari jadwal.
-   DATA_MIN dipakai sebagai "hari ini" pada prototype; pada implementasi
-   nyata nilai ini diambil dari tanggal sistem.
    ========================================================================== */
-const DATA_MIN = '2026-10-12';
 const HORIZON_HARI = 90;          // berapa hari ke depan boleh di-booking
 
 const NAMA_BULAN = [
@@ -59,14 +56,30 @@ const toDate = key => {
 /** Ubah objek Date menjadi "YYYY-MM-DD". */
 const toKey = dt => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
 
+/* "Hari ini" diambil dari tanggal sistem, bukan tanggal yang ditulis mati.
+   Kalau ditulis mati, kalender akan perlahan berbohong: tanggal yang sudah
+   lewat masih terbuka untuk dipilih, dan penanda hari ini ikut tertinggal di
+   tanggal lama begitu aplikasi dibuka beberapa hari kemudian.
+
+   Zona waktu memakai waktu lokal browser, sama seperti toKey() di atas, jadi
+   "hari ini" di kalender selalu sama dengan tanggal yang dilihat pengguna. */
+const CAL_TODAY = toKey(new Date());
+
 const CAL_MAX = (() => {
-  const d = toDate(DATA_MIN);
+  const d = toDate(CAL_TODAY);
   d.setDate(d.getDate() + HORIZON_HARI);
   return toKey(d);
 })();
 
-const CAL_MIN = DATA_MIN;
-const CAL_TODAY = DATA_MIN;   // "hari ini" pada prototype
+/** Batas bawah = hari ini. Semua tanggal sebelum itu sudah lewat. */
+const CAL_MIN = CAL_TODAY;
+
+/** Tanggal relatif terhadap hari ini: hari(-1) kemarin, hari(0) hari ini. */
+const hari = n => {
+  const d = toDate(CAL_TODAY);
+  d.setDate(d.getDate() + n);
+  return toKey(d);
+};
 
 /** True bila tanggal boleh dipilih (tidak lampau, masih dalam horizon). */
 function isSelectable(key) {
@@ -96,7 +109,7 @@ function stripDays(fromKey) {
 
 const CLASSES = [
   {
-    id: 'c1', day: '2026-10-13',
+    id: 'c1', day: hari(1),
     start: '08:00', end: '08:50',
     name: 'Reformer Sculpt & Core',
     type: 'reformer',
@@ -107,7 +120,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c2', day: '2026-10-13',
+    id: 'c2', day: hari(1),
     start: '10:00', end: '10:50',
     name: 'Cadillac Posture Alignment',
     type: 'cadillac',
@@ -118,7 +131,7 @@ const CLASSES = [
     usesPackage: false
   },
   {
-    id: 'c3', day: '2026-10-13',
+    id: 'c3', day: hari(1),
     start: '16:30', end: '17:20',
     name: 'Core & Fluid Flow',
     type: 'mat',
@@ -129,7 +142,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c4', day: '2026-10-13',
+    id: 'c4', day: hari(1),
     start: '19:00', end: '19:50',
     name: 'Mat Floor Basics',
     type: 'mat',
@@ -140,7 +153,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c5', day: '2026-10-14',
+    id: 'c5', day: hari(2),
     start: '12:15', end: '13:05',
     name: 'Prenatal Pilates',
     type: 'prenatal',
@@ -151,7 +164,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c6', day: '2026-10-14',
+    id: 'c6', day: hari(2),
     start: '18:00', end: '18:50',
     name: 'Reformer Power Flow',
     type: 'reformer',
@@ -162,7 +175,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c7', day: '2026-10-15',
+    id: 'c7', day: hari(3),
     start: '07:30', end: '08:20',
     name: 'Reformer Morning Flow',
     type: 'reformer',
@@ -173,7 +186,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c8', day: '2026-10-15',
+    id: 'c8', day: hari(3),
     start: '09:15', end: '10:05',
     name: 'Core & Mobility',
     type: 'mat',
@@ -184,7 +197,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c9', day: '2026-10-16',
+    id: 'c9', day: hari(4),
     start: '17:30', end: '18:20',
     name: 'Cadillac Full Body',
     type: 'cadillac',
@@ -195,7 +208,7 @@ const CLASSES = [
     usesPackage: false
   },
   {
-    id: 'c10', day: '2026-10-17',
+    id: 'c10', day: hari(5),
     start: '08:30', end: '09:20',
     name: 'Weekend Reformer Reset',
     type: 'reformer',
@@ -207,7 +220,7 @@ const CLASSES = [
   }
   ,
   {
-    id: 'c11', day: '2026-10-13',
+    id: 'c11', day: hari(1),
     start: '07:00', end: '07:50',
     name: 'Grand Indonesia Morning Flow',
     type: 'reformer',
@@ -218,7 +231,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c12', day: '2026-10-13',
+    id: 'c12', day: hari(1),
     start: '11:00', end: '11:50',
     name: 'Sunter Mat Mobility',
     type: 'mat',
@@ -229,7 +242,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c13', day: '2026-10-14',
+    id: 'c13', day: hari(2),
     start: '09:30', end: '10:20',
     name: 'Prenatal Pilates Bekasi',
     type: 'prenatal',
@@ -240,7 +253,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c14', day: '2026-10-14',
+    id: 'c14', day: hari(2),
     start: '17:00', end: '17:50',
     name: 'BSD Cadillac Strength',
     type: 'cadillac',
@@ -251,7 +264,7 @@ const CLASSES = [
     usesPackage: false
   },
   {
-    id: 'c15', day: '2026-10-15',
+    id: 'c15', day: hari(3),
     start: '10:00', end: '10:50',
     name: 'Grand Indonesia Core & Posture',
     type: 'mat',
@@ -262,7 +275,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c16', day: '2026-10-15',
+    id: 'c16', day: hari(3),
     start: '15:00', end: '15:50',
     name: 'Bekasi Reformer Strength',
     type: 'reformer',
@@ -273,7 +286,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c17', day: '2026-10-16',
+    id: 'c17', day: hari(4),
     start: '08:30', end: '09:20',
     name: 'Tangerang Mat Basics',
     type: 'mat',
@@ -284,7 +297,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c18', day: '2026-10-17',
+    id: 'c18', day: hari(5),
     start: '11:30', end: '12:20',
     name: 'Sunter Weekend Reformer',
     type: 'reformer',
@@ -295,7 +308,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c19', day: '2026-10-18',
+    id: 'c19', day: hari(6),
     start: '09:00', end: '09:50',
     name: 'Bekasi Sunday Reset',
     type: 'mat',
@@ -306,7 +319,7 @@ const CLASSES = [
     usesPackage: true
   },
   {
-    id: 'c20', day: '2026-10-18',
+    id: 'c20', day: hari(6),
     start: '10:30', end: '11:20',
     name: 'BSD Reformer Power',
     type: 'reformer',

@@ -21,17 +21,23 @@
   };
 
   /* ---------- State ---------- */
+  // Hari yang dibuka dan bulan date picker ikut tanggal sistem, bukan tanggal
+  // mati. Menulisnya mati membuat halaman terbuka di tanggal lama begitu
+  // aplikasi dipakai esok hari.
+  const HARI_INI = toKey(new Date());
+  const BULAN_INI = new Date().getMonth();
+
   const state = {
     view: 'schedule',
-    day: '2026-10-13',
+    day: HARI_INI,
     type: 'all',
     branch: 'all',
     instructor: 'all',
     search: '',
 
     // Bulan yang ditinjau pada date picker
-    pickerYear: 2026,
-    pickerMonth: 9,
+    pickerYear: new Date().getFullYear(),
+    pickerMonth: BULAN_INI,
 
     // Alur pemesanan
     step: 1,
@@ -193,7 +199,7 @@
 
   /* ---------- Date picker (kalender bulanan) ---------- */
 
-  /** "2026-10-13" → "13 Oktober 2026" */
+  /** "2026-10-13" → "13 Oktober 2026" (contoh format, bukan tanggal tetap) */
   function formatTanggalPanjang(key) {
     const d = toDate(key);
     return `${d.getDate()} ${NAMA_BULAN[d.getMonth()]} ${d.getFullYear()}`;
