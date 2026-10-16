@@ -30,6 +30,12 @@
   const state = {
     view: 'schedule',
     day: HARI_INI,
+
+    // Awal jendela strip 7 hari. Dipisah dari day supaya memilih tanggal lain
+    // tidak ikut menggeser strip -- kalau tidak, setiap klik membuat tanggal
+    // yang dipilih melompat ke kolom pertama dan pengguna kehilangan tempatnya.
+    stripFrom: HARI_INI,
+
     type: 'all',
     branch: 'all',
     instructor: 'all',
@@ -104,9 +110,23 @@
     ).reduce((sum, k) => sum + Math.max(k.capacity - k.taken, 0), 0);
   }
 
+  /* Pilih tanggal tanpa menggeser strip. Jendela 7 hari hanya pindah kalau
+     tanggal yang dipilih berada di luar jendela -- misalnya pengguna memilih
+     lewat date picker ke tanggal jauh. Selama tanggal itu masih kelihatan di
+     strip, posisinya dibiarkan. */
+  function selectDay(key) {
+    state.day = key;
+
+    const dari = toDate(state.stripFrom);
+    const akhir = new Date(dari);
+    akhir.setDate(akhir.getDate() + STRIP_PANJANG - 1);
+
+    const k = toDate(key);
+    if (k < dari || k > akhir) state.stripFrom = key;
+  }
+
   function renderCalendar() {
-    // Strip selalu dimulai dari tanggal terpilih agar tanggal itu terlihat
-    const days = stripDays(state.day);
+    const days = stripDays(state.stripFrom);
 
     $('#calRow').innerHTML = days.map(d => {
       const slots = slotsOn(d.key);
@@ -130,7 +150,7 @@
     $$('#calRow .cal-day').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.disabled) return;
-        state.day = btn.dataset.day;
+        selectDay(btn.dataset.day);
         renderCalendar();
         renderClasses();
       });
@@ -318,7 +338,7 @@
 
     $$('[data-pick]', $('#sheetBody')).forEach(btn => {
       btn.addEventListener('click', () => {
-        state.day = btn.dataset.pick;
+        selectDay(btn.dataset.pick);
         closeSheet();
         renderCalendar();
         renderClasses();

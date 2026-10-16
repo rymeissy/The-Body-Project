@@ -37,6 +37,7 @@ const INSTRUCTORS = [
    masa depan tetap bisa — pelanggan mem-booking jauh sebelum hari jadwal.
    ========================================================================== */
 const HORIZON_HARI = 90;          // berapa hari ke depan boleh di-booking
+const STRIP_PANJANG = 7;          // berapa tanggal yang terlihat di strip kalender
 
 const NAMA_BULAN = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -87,14 +88,15 @@ function isSelectable(key) {
 }
 
 /**
- * Deret 7 hari untuk strip kalender di halaman Jadwal.
- * Selalu dimulai dari tanggal yang sedang dipilih agar tanggal itu
- * tetap terlihat setelah dipilih lewat date picker.
+ * Deret STRIP_PANJANG hari untuk strip kalender di halaman Jadwal, dimulai
+ * dari fromKey. fromKey adalah awal jendela, bukan tanggal terpilih. Kalau
+ * yang dipakai adalah tanggal terpilih, strip akan bergeser setiap kali
+ * pengguna memilih tanggal lain.
  */
 function stripDays(fromKey) {
   const start = toDate(fromKey || CAL_TODAY);
   const out = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < STRIP_PANJANG; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     out.push({
