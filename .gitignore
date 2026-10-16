@@ -3,6 +3,12 @@ _tmp-*
 _check.html
 *.tmp
 
+# Screenshot full-page untuk proposal skripsi
+# Dokumentasi, bukan bagian dari aplikasi. Menaruhnya di repo menambah
+# hampir 2 MB tanpa gunanya bagi siapa pun yang mengklon. File-nya tetap
+# ada di disk; langkah untuk potret ulang ada di SCREENSHOT/README.md.
+SCREENSHOT/
+
 # Dependencies
 node_modules/
 jspm_packages/

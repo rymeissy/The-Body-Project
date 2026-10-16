@@ -600,16 +600,57 @@
     return CLASSES.filter(k => k.branchId === id).length;
   }
 
+  /* Motif abstrak untuk hero kartu cabang, digambar sendiri dari data
+
+     Motifnya: lingkaran yang naik dari titik di bawah tepi kartu, seperti
+     riak air atau matahari terbit, dan inisial nama cabang dengan font
+     display sebagai tanda air. Titik pusatnya digeser per cabang, jadi
+     delapan kartu tidak terlihat seragam.
+
+     Fungsinya sebagai cadangan, bukan hiasan. Foto pada branch.cover
+     diletakkan di atas motif ini; gambar yang gagal dimuat dilepas
+     sendiri sehingga motifnya yang terlihat. Kartu tidak pernah tampil
+     dengan kotak rusak, dan cabang yang belum punya foto -- atau yang
+     fotonya belum tersedia -- tetap punya tampilan yang disengaja
+     alih-alih bidang kosong. */
+  function branchArtwork(b, i) {
+    // Titik asal riak, disebar supaya tiap kartu berbeda posisi.
+    const X = [92, 306, 188, 396, 132, 248, 336, 64];
+    const Y = [152, 156, 170, 162, 146, 168, 138, 178];
+    const cx = X[i % X.length];
+    const cy = Y[i % Y.length];
+
+    const cincin = [30, 58, 86, 114, 142, 170, 198, 226]
+      .map(r => `<circle cx="${cx}" cy="${cy}" r="${r}"/>`).join('');
+
+    const inisial = b.name.trim().charAt(0).toUpperCase();
+
+    return `
+      <svg class="branch-card__art" viewBox="0 0 480 150"
+           preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <g class="branch-card__rings">${cincin}</g>
+        <text class="branch-card__mono" x="392" y="104">${inisial}</text>
+      </svg>`;
+  }
+
   function renderBranches() {
     $('#branchList').innerHTML = BRANCH_DETAILS.map((b, i) => {
       const sesi = branchSessionCount(b.id);
       // Nada hero sedikit berbeda antar cabang agar daftar tidak monoton
       const hue = 28 + (i * 9) % 26;
 
+      // Foto opsional -- lihat branchArtwork di atas.
+      const foto = b.cover ? `
+        <img class="branch-card__photo" src="${b.cover}"
+             alt="Interior ${b.name}" loading="lazy" decoding="async"
+             onerror="this.remove()">` : '';
+
       return `
         <article class="branch-card">
 
           <div class="branch-card__hero" style="--h:${hue}">
+            ${branchArtwork(b, i)}
+            ${foto}
             ${b.flag ? `
               <span class="badge-flag">
                 <span class="badge-flag__dot" aria-hidden="true"></span>
@@ -637,24 +678,44 @@
               <span aria-hidden="true">◉</span> ${b.address}
             </p>
 
+            <!-- Ikon fasilitas disembunyikan sementara. Yang dipakai
+                 sebelumnya U+229E, U+25EB, U+2691, U+25E0: semuanya glyph
+                 teknikal, bukan gambar yang menjelaskan apa isi tag itu.
+                 Field icon di BRANCH_DETAILS dibiarkan utuh, jadi menghidupkan
+                 lagi cukup pakai kembali .tag__icon di dalam tag ini. -->
             <div class="branch-card__tags">
               ${b.facilities.map(f => `
-                <span class="tag tag--facility">
-                  <span class="tag__icon" aria-hidden="true">${f.icon}</span>${f.label}
-                </span>`).join('')}
+                <span class="tag tag--facility">${f.label}</span>`).join('')}
             </div>
           </div>
 
           <div class="branch-card__foot">
             <button class="btn btn--primary" type="button" data-branch-jump="${b.id}">
-              <span aria-hidden="true">▤</span>
+              <span aria-hidden="true">
+                <svg class="branch-card__icon" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     focusable="false">
+                  <rect x="3.25" y="4.75" width="17.5" height="16" rx="2.5"/>
+                  <path d="M3.25 9.75h17.5"/>
+                  <path d="M8 2.75v4"/>
+                  <path d="M16 2.75v4"/>
+                </svg>
+              </span>
               Lihat Jadwal (${sesi} Sesi)
             </button>
 
             <a class="btn-map" href="${mapsLink(b.address)}"
                target="_blank" rel="noopener noreferrer"
                aria-label="Buka ${b.name} di Google Maps">
-              <span aria-hidden="true">🗺</span>
+              <span aria-hidden="true">
+                <svg class="btn-map__icon" viewBox="0 0 24 24" width="20" height="20" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     focusable="false">
+                  <path d="M3 6.5 9 3.5 15 6.5 21 3.5 21 17.5 15 20.5 9 17.5 3 20.5Z"/>
+                  <path d="M9 3.5v14"/>
+                  <path d="M15 6.5v14"/>
+                </svg>
+              </span>
             </a>
           </div>
         </article>`;

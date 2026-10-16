@@ -1164,7 +1164,15 @@ a { color: var(--green-700); }
   box-shadow: var(--sh-sm);
 }
 
-/* Hero — pengganti foto studio (belum ada aset gambar) */
+/* Hero kartu cabang: foto di atas motif abstrak.
+
+   Motifnya digambar sendiri (branchArtwork di app.js): riak lingkaran yang
+   naik dari titik di bawah tepi kartu, ditambah inisial nama cabang dengan
+   font display sebagai tanda air, titik pusatnya digeser per cabang. Jadi
+   kartu tidak terlihat seragam dan jelas itu placeholder, bukan foto.
+
+   Warna motif memakai hijau-900 transparan, bukan putih: dasarnya sudah
+   terang (lightness 78-90%), jadi putih di atasnya nyaris tak terlihat. */
 .branch-card__hero {
   position: relative;
   height: 148px;
@@ -1175,6 +1183,35 @@ a { color: var(--green-700); }
       hsl(var(--h) 20% 90%) 0%,
       hsl(var(--h) 16% 78%) 100%);
   overflow: hidden;
+}
+.branch-card__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.branch-card__rings circle {
+  fill: none;
+  stroke: rgba(31, 61, 49, .22);
+  stroke-width: 1.1;
+}
+.branch-card__mono {
+  font-family: var(--font-display);
+  font-size: 84px;
+  font-weight: 600;
+  fill: rgba(31, 61, 49, .16);
+}
+/* Foto asli, kalau branch.cover diisi. Diletakkan di atas motif, dan
+   motifnya tetap menggantung di bawah sebagai cadangan kalau gambar
+   gagal dimuat -- jadi kartu tidak pernah tampil dengan kotak rusak. */
+.branch-card__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 /* Tekstur halus supaya tidak terbaca sebagai blok warna polos */
 .branch-card__hero::after {
@@ -1310,6 +1347,25 @@ a { color: var(--green-700); }
 }
 .btn-map:hover { background: var(--green-100); }
 .btn-map:active { transform: scale(.94); }
+
+/* Ikon di kartu cabang.
+
+   "Lihat Jadwal" sebelumnya U+25A4 (▤, "square with horizontal fill") --
+   kotak bergaris horizontal, jadi terbaca seperti dokumen atau daftar
+   bertingkat, bukan kalender. Diganti SVG kalender yang sama persis
+   dengan ikon tab Jadwal dan judul bulan di baris kalender.
+
+   15px, bukan 19px seperti ikon tab. Tombol ini labelnya 13px, jadi ikon
+   19px akan terlihat terlalu besar dan tidak menyatu dengan teksnya.
+   15px memberi proporsi yang wajar: sedikit lebih tinggi dari huruf kapital.
+
+   Peta sebelumnya U+1F5FA, yaitu emoji peta dunia -- warna biru-hijau
+   sendiri dari sistem operasi, tidak bisa mengikuti currentColor, dan
+   bentuknya peta dunia bukan peta lipat. Diganti peta lipat: tepi atas
+   dan bawah bergerigi, dengan dua garis lipatan vertikal. 20px supaya
+   proporsional dengan lingkaran 44px. */
+.branch-card__icon,
+.btn-map__icon { display: block; }
 
 /* ---------- 9d. Date picker ---------- */
 .dp { display: grid; gap: 12px; }

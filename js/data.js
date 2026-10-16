@@ -558,9 +558,19 @@ const TOPUP_OPTIONS = [
   }
 ].map(t => ({ ...t, hemat: Math.round((1 - (t.price / t.sessions) / DROPIN_PRICE) * 100) }));
 
-/* Data cabang — placeholder prototype.
-/* Data cabang — placeholder prototype.
-   Ganti dengan data resmi dari The Body Project sebelum dipakai. */
+/* Data cabang - placeholder prototype.
+   Ganti dengan data resmi dari The Body Project sebelum dipakai.
+
+   cover: foto studio. Berkasnya di assets/branches/ dengan nama mengikuti
+   id cabang, sudah diperkecil ke lebar maksimal 1200px supaya tidak membebani
+   repo. Ganti fotonya cukup ubah path di sini.
+
+   Motif abstrak di app.js tetap menggantung di belakang foto sebagai cadangan:
+   gambar yang gagal dimuat dilepas sendiri, jadi kartu tidak pernah tampil
+   dengan kotak rusak.
+
+   Catatan: foto-foto ini milik studio masing-masing, belum foto resmi dari
+   The Body Project. Ganti dengan foto asli sebelum dipakai. */
 const BRANCH_DETAILS = [
   {
     id: 'senopati',
@@ -570,6 +580,7 @@ const BRANCH_DETAILS = [
     hours: '06.30 – 20.30 WIB',
     phone: '+62 21 0000 0001',
     distance: '1.2 km',
+    cover: 'assets/branches/senopati.jpg',
     status: 'Aktif',
     flag: true,
     facilities: [
@@ -587,6 +598,7 @@ const BRANCH_DETAILS = [
     hours: '06.30 – 20.30 WIB',
     phone: '+62 21 0000 0002',
     distance: '4.8 km',
+    cover: 'assets/branches/simatupang.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '6 Reformer Beds' },
@@ -601,6 +613,7 @@ const BRANCH_DETAILS = [
     hours: '07.00 – 21.00 WIB',
     phone: '+62 21 0000 0003',
     distance: '3.5 km',
+    cover: 'assets/branches/kemang.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '6 Reformer Beds' },
@@ -616,6 +629,7 @@ const BRANCH_DETAILS = [
     hours: '06.00 – 21.00 WIB',
     phone: '+62 21 0000 0004',
     distance: '9.1 km',
+    cover: 'assets/branches/grandindonesia.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '8 Reformer Beds' },
@@ -631,6 +645,7 @@ const BRANCH_DETAILS = [
     hours: '06.30 – 20.30 WIB',
     phone: '+62 21 0000 0005',
     distance: '16.4 km',
+    cover: 'assets/branches/pik.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '5 Reformer Beds' },
@@ -645,6 +660,7 @@ const BRANCH_DETAILS = [
     hours: '07.00 – 20.00 WIB',
     phone: '+62 21 0000 0006',
     distance: '12.9 km',
+    cover: 'assets/branches/sunter.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '4 Reformer Beds' },
@@ -659,6 +675,7 @@ const BRANCH_DETAILS = [
     hours: '06.30 – 20.30 WIB',
     phone: '+62 21 0000 0007',
     distance: '21.3 km',
+    cover: 'assets/branches/bekasi.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '5 Reformer Beds' },
@@ -674,6 +691,7 @@ const BRANCH_DETAILS = [
     hours: '06.30 – 21.00 WIB',
     phone: '+62 21 0000 0008',
     distance: '28.6 km',
+    cover: 'assets/branches/tangerang.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '6 Reformer Beds' },
