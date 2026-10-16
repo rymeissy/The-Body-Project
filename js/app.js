@@ -670,16 +670,34 @@
     if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet();
   });
 
+  /* Baris langkah: tiga blok di kiri-tengah-kanan, disambung dua garis.
+
+     Garis dibuat sebagai saudara sejajar dari tiap .step, bukan ::after di
+     dalamnya. Kalau garis ada di dalam langkah, panjangnya terikat lebar
+     langkah itu sendiri sehingga tidak bisa melewati batasnya -- akibatnya
+     langkah pertama, kedua, dan ketiga hanya bisa duduk di 0, 1/3, dan 2/3
+     dari baris, bukan di kiri, tengah, dan kanan. Sebagai saudara, kedua
+     garis berbagi sisa ruang sama rata (flex: 1 1 0) dan jaraknya ikut gap
+     yang sama untuk semua. */
   function stepsBar() {
     const labels = ['Pilih Paket', 'Data', 'Bayar'];
-    return `<div class="steps">${labels.map((l, i) => {
+    const kelas = n => n === state.step ? 'is-active' : n < state.step ? 'is-done' : '';
+
+    let html = '';
+    labels.forEach((l, i) => {
       const n = i + 1;
-      const cls = n === state.step ? 'is-active' : n < state.step ? 'is-done' : '';
-      return `<div class="step ${cls}">
-                <span class="step__dot">${n < state.step ? '✓' : n}</span>
-                <span>${l}</span>
-              </div>`;
-    }).join('')}</div>`;
+      html += `<div class="step ${kelas(n)}">
+                 <span class="step__dot">${n < state.step ? '✓' : n}</span>
+                 <span>${l}</span>
+               </div>`;
+
+      // Garis hanya di antara langkah, dan hijau kalau langkah itu selesai.
+      if (i < labels.length - 1) {
+        const done = n < state.step;
+        html += `<span class="step__line${done ? ' is-done' : ''}" aria-hidden="true"></span>`;
+      }
+    });
+    return `<div class="steps">${html}</div>`;
   }
 
   /* ---------- Langkah 1: pilih paket ---------- */

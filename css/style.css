@@ -1469,9 +1469,16 @@ a { color: var(--green-700); }
 #profileSheet .sheet__foot .btn { min-width: 104px; }
 
 /* Langkah */
-.steps { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+/* Baris langkah: 1 di kiri, 2 di tengah, 3 di kanan, disambung dua garis.
+
+   .step tidak lagi flex: 1 -- lebarnya mengikuti isinya sendiri, sehingga
+   ketiga blok bisa mengambang ke kiri, ke tengah, dan ke kanan. Yang mengisi
+   ruang di antaranya adalah .step__line, dan karena keduanya sama-sama
+   flex: 1 1 0, keduanya dapat sisa ruang yang sama persis. Jarak antar
+   elemen semuanya ikut gap yang satu, jadi ikut sama rata. */
+.steps { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .step {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1479,14 +1486,14 @@ a { color: var(--green-700); }
   font-weight: 600;
   color: var(--ink-400);
 }
-.step::after {
-  content: "";
-  flex: 1;
+.step__line {
+  flex: 1 1 0;
+  min-width: 16px;
   height: 2px;
   background: var(--cream-300);
   border-radius: var(--r-full);
 }
-.step:last-child::after { display: none; }
+.step__line.is-done { background: var(--green-200); }
 .step__dot {
   width: 18px; height: 18px;
   display: grid; place-items: center;
@@ -1499,7 +1506,6 @@ a { color: var(--green-700); }
 .step.is-active { color: var(--green-700); }
 .step.is-active .step__dot { background: var(--green-700); color: var(--cream-50); }
 .step.is-done .step__dot { background: var(--green-200); color: var(--green-800); }
-.step.is-done::after { background: var(--green-200); }
 
 /* Opsi paket */
 .option {
