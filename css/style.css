@@ -67,7 +67,18 @@
    padahal sudah disembunyikan dari DOM. */
 [hidden] { display: none !important; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+
+  /* Selalu sisakan ruang scrollbar, walau halaman sedang tidak bisa
+     digulir. Tanpa ini kolom aplikasi bergeser beberapa piksel saat
+     scrollbar muncul: .app-shell dipusatkan oleh body (lebar area konten),
+     sedangkan .auth yang position: fixed mengikuti initial containing block
+     yang ikut melebar. Gutter yang tetap membuat keduanya memusatkan di
+     titik yang sama, jadi berpindah dari login ke aplikasi tidak melompat
+     ke samping. */
+  scrollbar-gutter: stable;
+}
 
 body {
   margin: 0;
@@ -227,21 +238,32 @@ a { color: var(--green-700); }
 /* ==========================================================================
    5. AUTH — gerbang sebelum masuk ke aplikasi
    ========================================================================== */
+/* Layar login harus terlihat sama seperti aplikasi: kolom 512px di tengah
+   dengan gutter putih kiri-kanan. Sebelumnya .auth memenuhi layar dengan krem,
+   jadi di desktop ia melebar penuh -- berbeda dari .app-shell yang memakai
+   kolom 512px dengan latar body putih di sampinya.
+
+   .auth tetap position: fixed karena menimpa aplikasi, tapi sekarang isinya
+   dibatasi selebar .app-shell supaya keduanya terlihat seperti satu halaman. */
 .auth {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  grid-template-columns: 1fr;
-  background: var(--cream-50);
+  display: flex;
+  justify-content: center;
+  background: #FFFFFF;
   overflow-y: auto;
 }
 
 .auth__panel {
+  width: 100%;
+  max-width: 512px;
+  background: var(--cream-50);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 28px 22px 40px;
+  box-shadow: 0 0 0 1px var(--line);
 }
 .auth__inner { width: 100%; max-width: 400px; }
 
@@ -259,6 +281,15 @@ a { color: var(--green-700); }
 }
 .auth__sub { font-size: 13px; color: var(--ink-400); margin-bottom: 22px; }
 .auth__sub strong { color: var(--ink-900); font-weight: 600; }
+
+/* Form yang tidak punya .auth__sub -- sekarang cuma form Login. Jarak 5px dari
+   .auth__title tadinya terasa lapang karena masih ada teks pemisah di
+   antaranya; sekarang teks itu dihapus dan judul jadi nempel ke label. Beri
+   jarak yang biasanya dipisahkan oleh .auth__sub.
+
+   Margin antar elemen saudara collapse, jadi angka di sini menggantikan 5px
+   .auth__title, bukan ditambahkan ke 5px itu. */
+.auth__title + .field-group { margin-top: 22px; }
 
 /* Catatan kecil di bawah form login */
 .auth__note {
