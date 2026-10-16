@@ -1603,8 +1603,9 @@
 
   /* Halaman Profil punya dua wajah. Belum masuk tidak ada apa pun yang boleh
      tampil: nomor, tanggal bergabung, dan jumlah paket semuanya data pribadi.
-     Yang tetap boleh: tombol Hubungi admin, karena itu cuma tautan ke studio
-     dan tidak butuh akun. */
+     Yang tetap boleh: baris "Tentang The Body Project", karena isinya
+     memang tentang studio dan tidak butuh akun -- sama seperti sebelumnya
+     ketika baris ini bernama "Hubungi admin". */
   function applyProfileSessionState(signedIn) {
     $$('#view-profile [data-needs-login]').forEach(el => { el.hidden = !signedIn; });
     $('#profileGuest').hidden = signedIn;

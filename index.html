@@ -121,21 +121,69 @@
     </div>
   </header>
 
+  <!-- Ikon tab memakai SVG garis dengan stroke="currentColor", bukan emoji.
+
+       Emoji (U+1F4C5 kalender, U+1F3AB tiket, U+1F550 jam, U+1F464 orang,
+       U+1F4CD pin) digambar dengan paletnya sendiri oleh sistem
+       operasi dan tidak mengikuti color CSS sama sekali -- kalender biru,
+       tiket kuning, orang ungu. Akibatnya warna hijau tema aplikasi tidak
+       pernah sampai ke ikon, dan tab aktif hanya berubah warna teksnya
+       sementara ikonnya tetap berwarna-warni.
+
+       Dengan currentColor ikon mengikuti .tabbar button: --ink-400 saat
+       tidak aktif, --green-700 saat aktif. Bentuknya juga jadi konsisten
+       -- satu gaya garis, satu tebal, satu skala.
+
+       aria-hidden sudah ada di .tabbar__icon, jadi SVG-nya tidak perlu
+       diulang; teks di sebelahnya sudah menyebut halaman mana. -->
+
   <nav class="tabbar" id="tabbar" aria-label="Navigasi utama">
     <button type="button" data-view="schedule" aria-current="page">
-      <span class="tabbar__icon" aria-hidden="true">📅</span> Jadwal
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <rect x="3.25" y="4.75" width="17.5" height="16" rx="2.5"/>
+          <path d="M3.25 9.75h17.5"/>
+          <path d="M8 2.75v4"/>
+          <path d="M16 2.75v4"/>
+        </svg>
+      </span> Jadwal
     </button>
     <button type="button" data-view="branch">
-      <span class="tabbar__icon" aria-hidden="true">📍</span> Cabang
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </span> Cabang
     </button>
     <button type="button" data-view="package">
-      <span class="tabbar__icon" aria-hidden="true">🎫</span> Paket
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M2 9.5a2.5 2.5 0 0 1 0 5V17a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2.5a2.5 2.5 0 0 1 0-5V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+          <path d="M13 5v2M13 11v2M13 17v2"/>
+        </svg>
+      </span> Paket
     </button>
     <button type="button" data-view="history">
-      <span class="tabbar__icon" aria-hidden="true">🕐</span> Riwayat
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5.2l3.4 2"/>
+        </svg>
+      </span> Riwayat
     </button>
     <button type="button" data-view="profile">
-      <span class="tabbar__icon" aria-hidden="true">👤</span> Profil
+      <span class="tabbar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M19.5 20.5v-1.5a5 5 0 0 0-5-5h-5a5 5 0 0 0-5 5v1.5"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </span> Profil
     </button>
   </nav>
 
@@ -308,12 +356,25 @@
       <div class="panel__head"><span class="panel__title">Menu</span></div>
       <div>
         <button class="item" type="button" data-needs-login style="width:100%; text-align:left;">
-          <span class="item__icon" aria-hidden="true">🔔</span>
+          <span class="item__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+          </span>
           <span class="item__body"><span class="item__title">Notifikasi pemesanan</span></span>
         </button>
         <button class="item" type="button" style="width:100%; text-align:left;">
-          <span class="item__icon" aria-hidden="true">💬</span>
-          <span class="item__body"><span class="item__title">Hubungi admin</span></span>
+          <span class="item__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 11v5"/>
+              <path d="M12 7.6h.01"/>
+            </svg>
+          </span>
+          <span class="item__body"><span class="item__title">Tentang The Body Project</span></span>
         </button>
         <button class="item" type="button" id="logoutBtn" data-needs-login style="width:100%; text-align:left;">
           <span class="item__icon" aria-hidden="true">↩︎</span>

@@ -476,6 +476,17 @@ a { color: var(--green-700); }
   font-size: 15px;
   transition: transform .18s ease, background .18s ease;
 }
+/* Ikon tab: SVG garis 19px, stroke-nya currentColor.
+
+   19px di dalam pil 30×26 menyisakan 3,5px di atas dan bawah, jadi
+   ikon tidak menyentuh tepi pil saat tab aktif naik 2px. Lebarnya juga
+   setara dengan tinggi glyph emoji 15px yang sebelumnya -- tebal stroke
+   2 pada viewBox 24 jadi sekitar 1,6px, cukup berat di layar 1x.
+
+   display:block dipakai supaya SVG tidak menyisakan baris kosong dari
+   baseline-nya, yang menambah tinggi tombol dan membuat lima tab tidak
+   rata vertikal. */
+.tabbar__icon svg { display: block; }
 
 /* ---------- 6. View ---------- */
 .view { display: none; padding: 18px; }
