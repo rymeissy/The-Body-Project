@@ -1187,10 +1187,6 @@
         dd.textContent = user.email || '—';
       }
     });
-
-    // Ringkasan pada halaman Paket
-    const sub = $('#logoutSub');
-    if (sub) sub.textContent = 'Keluar dari ' + user.name;
   }
 
 /* ---------- Validasi ---------- */
