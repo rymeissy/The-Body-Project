@@ -28,10 +28,10 @@
         </div>
       </div>
 
-      <!-- ---------- Masuk ---------- -->
+      <!-- ---------- Login ---------- -->
       <form class="auth__form" id="formLogin" novalidate aria-labelledby="loginTitle">
-        <h1 class="auth__title" id="loginTitle">Masuk ke The Body Project</h1>
-        <p class="auth__sub">Masukkan nomor WhatsApp, kami kirim kode OTP untuk masuk.</p>
+        <h1 class="auth__title" id="loginTitle">Login ke The Body Project</h1>
+        <p class="auth__sub">Masukkan nomor WhatsApp, kami kirim kode OTP untuk login.</p>
 
         <div class="field-group">
           <label class="field-label" for="loginPhone">No. WhatsApp</label>
@@ -108,7 +108,7 @@
           <p class="field__error" id="errFullName" role="alert"></p>
         </div>
 
-        <button class="btn btn--primary btn--block" type="submit">Simpan &amp; masuk</button>
+        <button class="btn btn--primary btn--block" type="submit">Simpan &amp; login</button>
 
         <p class="auth__note">Nama ini hanya diminta sekali saja.</p>
       </form>
@@ -243,12 +243,25 @@
   <main class="view" id="view-profile">
     <div class="view-head">
       <div>
-        <h1>Profil Saya</h1>
-        <p>Akun &amp; status keanggotaan</p>
+        <h1 id="profileTitle">Profil Saya</h1>
+        <p id="profileSubtitle">Akun &amp; status keanggotaan</p>
       </div>
     </div>
 
-    <div class="panel">
+    <!-- Belum masuk: tidak ada data pribadi yang boleh tampil -->
+    <div class="panel" id="profileGuest" hidden>
+      <div class="panel__body profile-guest">
+        <span class="profile-guest__icon" aria-hidden="true">🔒</span>
+        <p class="profile-guest__text">
+          Login untuk melihat paket sesi, riwayat pemesanan, dan e-tiket kamu.
+        </p>
+        <button class="btn btn--primary btn--block" type="button" id="guestSignInBtn">
+          Login dengan nomor WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <div class="panel" data-needs-login>
       <div class="panel__body" style="display:flex; gap:14px; align-items:center;">
         <div class="avatar" id="profileAvatar" style="width:52px;height:52px;font-size:17px;">AK</div>
         <div style="flex:1; min-width:0;">
@@ -262,7 +275,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" data-needs-login>
       <div class="panel__head"><span class="panel__title">Informasi Keanggotaan</span></div>
       <div class="panel__body">
         <dl style="margin:0;">
@@ -276,7 +289,7 @@
     <div class="panel">
       <div class="panel__head"><span class="panel__title">Menu</span></div>
       <div>
-        <button class="item" type="button" style="width:100%; text-align:left;">
+        <button class="item" type="button" data-needs-login style="width:100%; text-align:left;">
           <span class="item__icon" aria-hidden="true">🔔</span>
           <span class="item__body"><span class="item__title">Notifikasi pemesanan</span><span class="item__sub">Email & WhatsApp</span></span>
         </button>
@@ -284,7 +297,7 @@
           <span class="item__icon" aria-hidden="true">💬</span>
           <span class="item__body"><span class="item__title">Hubungi admin</span><span class="item__sub">Chat via WhatsApp</span></span>
         </button>
-        <button class="item" type="button" id="logoutBtn" style="width:100%; text-align:left;">
+        <button class="item" type="button" id="logoutBtn" data-needs-login style="width:100%; text-align:left;">
           <span class="item__icon" aria-hidden="true">↩︎</span>
           <span class="item__body"><span class="item__title">Keluar</span><span class="item__sub" id="logoutSub">Sesi tersimpan di perangkat ini</span></span>
         </button>

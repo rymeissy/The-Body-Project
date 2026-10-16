@@ -130,10 +130,22 @@
 
   /* ---------- Kartu paket ---------- */
   function renderPackageCard() {
+    const card = $('#pkgCard');
+
+    // Kartu paket memuat data pribadi — sisa sesi milik orang itu sendiri.
+    // Belum masuk, tidak ada yang perlu ditampilkan.
+    if (!isSignedIn()) {
+      card.hidden = true;
+      card.innerHTML = '';
+      return;
+    }
+
+    card.hidden = false;
+
     const p = PACKAGES[0];   // paket aktif
     const pct = Math.round((p.remaining / p.total) * 100);
 
-    $('#pkgCard').innerHTML = `
+    card.innerHTML = `
       <div class="pkg-card__top">
         <span class="pkg-card__icon" aria-hidden="true">✂</span>
         <div class="pkg-card__id">
@@ -411,7 +423,14 @@
     list.innerHTML = items.map(classCard).join('');
 
     $$('[data-book]', list).forEach(btn => {
-      btn.addEventListener('click', () => openSheet(btn.dataset.book));
+      btn.addEventListener('click', () => {
+        // Memesan kelas berarti memakai kuota paket, jadi harus ada akun dulu.
+        if (!isSignedIn()) {
+          toast('Login dulu untuk memesan kelas');
+          return;
+        }
+        openSheet(btn.dataset.book);
+      });
     });
   }
 
@@ -1002,6 +1021,14 @@
     catch { return null; }
   }
 
+  /* Mode ?demo=1 purposely leaves localStorage empty — it shows the app without
+     a session. So "sudah masuk" means a real session exists, not merely that
+     the app shell is visible. */
+  function isSignedIn() {
+    const user = signedInUser();
+    return Boolean(user && user.name);
+  }
+
   /** Tampilkan aplikasi atau gerbang auth sesuai status sesi. */
   function gate() {
     const user = signedInUser();
@@ -1012,10 +1039,10 @@
     if (forced || (user && user.name)) {
       authScreen.hidden = true;
       appShell.hidden = false;
-      // Mode demo sengaja tanpa email, supaya Profil terlihat sama persis dengan
-    // akun baru yang belum pernah mengisinya.
-    applyUserToProfile(forced ? { name: CUSTOMER.name, email: null,
-                                  phone: CUSTOMER.phone, since: CUSTOMER.memberSince } : user);
+      // Mode demo sengaja tanpa email, supaya Profil terlihat sama persis
+      // dengan akun baru yang belum pernah mengisinya.
+      applyUserToProfile(forced ? { name: CUSTOMER.name, email: null,
+                                    phone: CUSTOMER.phone, since: CUSTOMER.memberSince } : user);
     } else {
       authScreen.hidden = false;
       appShell.hidden = true;
@@ -1028,6 +1055,38 @@
       $('#otpDemo').hidden = true;
       setAuthForm('login');
     }
+
+    // Di luar cabang if/else: kartu paket dan halaman profil sama-sama
+    // bergantung pada sesi, jadi keduanya dihitung ulang setiap kali
+    // status masuk berubah — bukan hanya saat masuk.
+    renderPackageCard();
+    applyProfileSessionState(isSignedIn());
+  }
+
+  /** Tampilkan layar masuk tanpa sempat menutup sesi. */
+  function showAuthGate() {
+    appShell.hidden = true;
+    authScreen.hidden = false;
+    document.body.style.overflow = '';
+    formLogin.reset();
+    setAuthForm('login');
+    renderPackageCard();
+    applyProfileSessionState(false);
+  }
+
+  $('#guestSignInBtn').addEventListener('click', showAuthGate);
+
+  /* Halaman Profil punya dua wajah. Belum masuk tidak ada apa pun yang boleh
+     tampil: nomor, tanggal bergabung, dan jumlah paket semuanya data pribadi.
+     Yang tetap boleh: tombol Hubungi admin, karena itu cuma tautan ke studio
+     dan tidak butuh akun. */
+  function applyProfileSessionState(signedIn) {
+    $$('#view-profile [data-needs-login]').forEach(el => { el.hidden = !signedIn; });
+    $('#profileGuest').hidden = signedIn;
+    $('#profileTitle').textContent = signedIn ? 'Profil Saya' : 'Profil';
+    $('#profileSubtitle').textContent = signedIn
+      ? 'Akun & status keanggotaan'
+      : 'Login untuk melihat data kamu';
   }
 
   /** Terapkan data pengguna yang masuk ke seluruh bagian aplikasi. */
@@ -1194,7 +1253,7 @@
     otpTimer = setInterval(tick, 1000);
   }
 
-  /* ---------- Masuk: nomor → OTP ---------- */
+  /* ---------- Login: nomor → OTP ---------- */
   formLogin.addEventListener('submit', async e => {
     e.preventDefault();
     clearErrors(formLogin);

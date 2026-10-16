@@ -335,7 +335,7 @@ BEGIN
     END IF;
     RAISE NOTICE '  -> dibuat : % , perlu nama? %', baru.full_name, (NOT baru.name_confirmed);
 
-    -- Masuk kedua kalinya: akun yang sama, tidak ada duplikat.
+    -- Login kedua kalinya: akun yang sama, tidak ada duplikat.
     SELECT * INTO lagi FROM fn_upsert_user('6289990000003'::citext);
     IF lagi.id <> baru.id THEN
         RAISE EXCEPTION 'GAGAL: muncul akun kedua untuk nomor yang sama';
@@ -372,7 +372,7 @@ BEGIN
     END IF;
     RAISE NOTICE '  -> nama tersimpan : % , terkonfirmasi: %', tersimpan.full_name, tersimpan.name_confirmed;
 
-    -- Masuk lagi: fn_upsert_user harus melaporkan tidak perlu minta nama.
+    -- Login lagi: fn_upsert_user harus melaporkan tidak perlu minta nama.
     SELECT * INTO baru FROM fn_upsert_user(test_phone);
     IF NOT baru.name_confirmed THEN
         RAISE EXCEPTION 'GAGAL: nama diminta lagi padahal sudah diisi';
