@@ -863,7 +863,46 @@
      RENDER VIEW: PAKET
      ====================================================================== */
   function renderPackages() {
+    // Halaman ini bercampur: nama paket, harga, dan ketentuan kelas boleh
+    // dilihat siapa pun, sedangkan sisa sesi, bilah kuota, dan tanggal berlaku
+    // milik orang yang sedang masuk.
+    //
+    // Karena itu tamu TIDAK dikasih halaman kosong seperti di Riwayat. Mengosongkan
+    // tab ini akan membuang satu-satunya hal yang berguna bagi calon pelanggan,
+    // yaitu harganya. Yang berubah cuma isi kartunya: untuk tamu menjadi daftar
+    // harga, dengan "Termasuk ..." sebagai gantinya -- field itu sudah ada di
+    // data tapi belum pernah tampil di halaman ini.
+    const tamu = isGuest();
+
+    const sub = $('#packageSubtitle');
+    if (sub) {
+      sub.textContent = tamu
+        ? 'Harga paket dan ketentuan kelas'
+        : 'Ringkasan paket aktif dan kebijakan';
+    }
+
     $('#packageList').innerHTML = PACKAGES.map(p => {
+      if (tamu) {
+        // p.includes sudah berbunyi "Termasuk Reformer & Cadillac", jadi
+        // jangan diberi label "Termasuk" lagi -- hasilnya mengulang kata yang
+        // sama dua kali dalam satu baris. Ditulis sebagai baris biasa, bukan
+        // baris .kv, karena isinya kalimat utuh, bukan pasangan label-nilai.
+        return `
+          <div class="panel">
+            <div class="panel__head">
+              <span class="panel__title">${p.name}</span>
+            </div>
+            <div class="panel__body">
+              <p style="margin:0 0 12px; font-size:12px; color:var(--ink-600);">${p.includes}</p>
+              <dl style="margin:0;">
+                <div class="kv"><dt>Jumlah sesi</dt><dd>${p.total} sesi</dd></div>
+                <div class="kv"><dt>Harga paket</dt><dd>${rupiah(p.price)}</dd></div>
+                <div class="kv"><dt>Harga per sesi</dt><dd>${rupiah(Math.round(p.price / p.total))}</dd></div>
+              </dl>
+            </div>
+          </div>`;
+      }
+
       const pct = Math.round((p.remaining / p.total) * 100);
       const low = p.remaining <= 2;
 
@@ -1810,17 +1849,20 @@
       setAuthForm('login');
     }
 
-    // Di luar cabang if/else: kartu paket, daftar riwayat, dan halaman profil
-    // semuanya bergantung pada sesi, jadi dihitung ulang setiap kali status
-    // masuk berubah — bukan hanya saat masuk. Bar judul juga, karena init()
-    // tidak lewat switchView().
+    // Di luar cabang if/else: kartu paket, daftar riwayat, daftar paket, dan
+    // halaman profil semuanya bergantung pada sesi, jadi dihitung ulang setiap
+    // kali status masuk berubah — bukan hanya saat masuk. Bar judul juga,
+    // karena init() tidak lewat switchView().
     //
-    // Ketiganya memakai isGuest(), bukan isSignedIn(), supaya mode demo
-    // menampilkan keadaan pengguna yang sudah masuk pada ketiganya sekaligus.
+    // Semuanya memakai isGuest(), bukan isSignedIn(), supaya mode demo
+    // menampilkan keadaan pengguna yang sudah masuk sekaligus. Tanpa
+    // renderPackages() di sini, halaman Paket akan tetap menampilkan sisa sesi
+    // milik orang lain tepat setelah keluar.
     // applyProfileSessionState() parameternya kebalikan -- dia menerima
     // "sudah masuk", bukan "tamu".
     renderPackageCard();
     renderHistory();
+    renderPackages();
     applyProfileSessionState(!isGuest());
     appShell.classList.toggle('has-header', state.view === 'schedule');
   }
