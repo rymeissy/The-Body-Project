@@ -3,14 +3,6 @@
    (multi-branch class booking, real-time quota, waitlist, payment gateway)
    ========================================================================== */
 
-const BRANCHES = [
-  { id: 'all',      name: 'Semua Cabang' },
-  { id: 'senopati', name: 'Senopati Sanctuary' },
-  { id: 'menteng',  name: 'Menteng' },
-  { id: 'pik',      name: 'PIK Avenue' },
-  { id: 'kemang',   name: 'Kemang' },
-  { id: 'simatupang', name: 'TB Simatupang' }
-];
 
 const CLASS_TYPES = [
   { id: 'all',      label: 'Semua Kelas' },
@@ -141,83 +133,6 @@ function stripDays(fromKey) {
 
 const CLASSES = [
   {
-    id: 'c1', day: hari(1),
-    start: '08:00', end: '08:50',
-    name: 'Reformer Sculpt & Core',
-    type: 'reformer',
-    level: 'Beginner/Intermediate',
-    instructor: 'Sarah Adistya',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
-    capacity: 6, taken: 4, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c2', day: hari(1),
-    start: '10:00', end: '10:50',
-    name: 'Cadillac Posture Alignment',
-    type: 'cadillac',
-    level: 'Intermediate',
-    instructor: 'Nadia Prasetyo',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
-    capacity: 4, taken: 4, waitlist: 1,
-    usesPackage: false
-  },
-  {
-    id: 'c3', day: hari(1),
-    start: '16:30', end: '17:20',
-    name: 'Core & Fluid Flow',
-    type: 'mat',
-    level: 'All Levels',
-    instructor: 'Karin Utami',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
-    capacity: 8, taken: 4, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c4', day: hari(1),
-    start: '19:00', end: '19:50',
-    name: 'Mat Floor Basics',
-    type: 'mat',
-    level: 'Beginner',
-    instructor: 'Wahyu Nugroho',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
-    capacity: 10, taken: 2, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c5', day: hari(2),
-    start: '12:15', end: '13:05',
-    name: 'Prenatal Pilates',
-    type: 'prenatal',
-    level: 'All Levels',
-    instructor: 'Gaga Permana',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio C',
-    capacity: 4, taken: 3, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c6', day: hari(2),
-    start: '18:00', end: '18:50',
-    name: 'Reformer Power Flow',
-    type: 'reformer',
-    level: 'Intermediate',
-    instructor: 'Malik Hidayat',
-    branch: 'PIK Avenue', branchId: 'pik', studio: 'Studio A',
-    capacity: 6, taken: 1, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c7', day: hari(3),
-    start: '07:30', end: '08:20',
-    name: 'Reformer Morning Flow',
-    type: 'reformer',
-    level: 'All Levels',
-    instructor: 'Sarah Adistya',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
-    capacity: 6, taken: 0, waitlist: 0,
-    usesPackage: true
-  },
-  {
     id: 'c8', day: hari(3),
     start: '09:15', end: '10:05',
     name: 'Core & Mobility',
@@ -226,40 +141,6 @@ const CLASSES = [
     instructor: 'Nadia Prasetyo',
     branch: 'Kemang', branchId: 'kemang', studio: 'Studio 1',
     capacity: 12, taken: 5, waitlist: 0,
-    usesPackage: true
-  },
-  {
-    id: 'c9', day: hari(4),
-    start: '17:30', end: '18:20',
-    name: 'Cadillac Full Body',
-    type: 'cadillac',
-    level: 'Advanced',
-    instructor: 'Karin Utami',
-    branch: 'Menteng', branchId: 'menteng', studio: 'Studio B',
-    capacity: 4, taken: 2, waitlist: 0,
-    usesPackage: false
-  },
-  {
-    id: 'c10', day: hari(5),
-    start: '08:30', end: '09:20',
-    name: 'Weekend Reformer Reset',
-    type: 'reformer',
-    level: 'All Levels',
-    instructor: 'Gaga Permana',
-    branch: 'TB Simatupang', branchId: 'simatupang', studio: 'Studio A',
-    capacity: 6, taken: 3, waitlist: 0,
-    usesPackage: true
-  }
-  ,
-  {
-    id: 'c11', day: hari(1),
-    start: '07:00', end: '07:50',
-    name: 'Grand Indonesia Morning Flow',
-    type: 'reformer',
-    level: 'All Levels',
-    instructor: 'Sarah Adistya',
-    branch: 'Grand Indonesia', branchId: 'grandindonesia', studio: 'Studio A',
-    capacity: 8, taken: 3, waitlist: 0,
     usesPackage: true
   },
   {
@@ -294,17 +175,6 @@ const CLASSES = [
     branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
     capacity: 4, taken: 1, waitlist: 0,
     usesPackage: false
-  },
-  {
-    id: 'c15', day: hari(3),
-    start: '10:00', end: '10:50',
-    name: 'Grand Indonesia Core & Posture',
-    type: 'mat',
-    level: 'All Levels',
-    instructor: 'Nadia Prasetyo',
-    branch: 'Grand Indonesia', branchId: 'grandindonesia', studio: 'Studio B',
-    capacity: 12, taken: 6, waitlist: 0,
-    usesPackage: true
   },
   {
     id: 'c16', day: hari(3),
@@ -361,10 +231,6 @@ const CLASSES = [
     capacity: 6, taken: 4, waitlist: 0,
     usesPackage: true
   },
-
-  /* Bintaro. Jumlah dan waktunya masih contoh -- koreksi sesuai jadwal asli.
-     taken sengaja varies 0 / 1 / penuh supaya ketiga bentuk badge (Tersedia,
-     Sisa, Penuh) langsung kelihatan di cabang ini saja. */
   {
     id: 'c21', day: hari(1),
     start: '07:30', end: '08:20',
@@ -400,40 +266,113 @@ const CLASSES = [
   }
 ];
 
-/* Jadwal berulang untukPekan-pekan berikutnya, supaya tanggal masa depan
-   tidak kosong. Pola studio pada umumnya berulang tiap minggu. */
+/* Jadwal berulang untuk minggu-minggu berikutnya, supaya tanggal masa depan
+   tidak kosong. Pola tiap studio berulang tiap minggu.
+
+   Semuanya milik tujuh cabang yang benar-benar ada. Senopati, TB Simatupang,
+   Grand Indonesia, PIK Avenue, dan Menteng sudah dihapus, jadi pola lamanya
+   dibuang seluruhnya -- bukan dipindah -- kalau tidak maka 90 hari ke depan
+   akan menampilkan kelas dari cabang yang tidak ada lagi.
+
+   Tiga kelas per hari, dibagi ke tujuh cabang, supaya tiap hari punya sesi
+   dan tidak semua cabang menumpuk di hari yang sama. */
 const JADWAL_MINGGUAN = [
-  { hari: 1, start: '08:00', end: '08:50', name: 'Reformer Sculpt & Core',
-    type: 'reformer', level: 'Beginner/Intermediate', instructor: 'Sarah Adistya',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
-    capacity: 6, usesPackage: true },
-  { hari: 2, start: '10:00', end: '10:50', name: 'Cadillac Posture Alignment',
-    type: 'cadillac', level: 'Intermediate', instructor: 'Nadia Prasetyo',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
-    capacity: 4, usesPackage: false },
-  { hari: 2, start: '16:30', end: '17:20', name: 'Core & Fluid Flow',
-    type: 'mat', level: 'All Levels', instructor: 'Karin Utami',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio B',
-    capacity: 8, usesPackage: true },
-  { hari: 3, start: '18:00', end: '18:50', name: 'Reformer Power Flow',
-    type: 'reformer', level: 'Intermediate', instructor: 'Malik Hidayat',
-    branch: 'PIK Avenue', branchId: 'pik', studio: 'Studio A',
-    capacity: 6, usesPackage: true },
-  { hari: 4, start: '07:30', end: '08:20', name: 'Reformer Morning Flow',
+  // Senin
+  { hari: 1, start: '07:30', end: '08:20', name: 'Bintaro Reformer Sculpt',
     type: 'reformer', level: 'All Levels', instructor: 'Sarah Adistya',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio A',
     capacity: 6, usesPackage: true },
-  { hari: 5, start: '17:30', end: '18:20', name: 'Cadillac Full Body',
-    type: 'cadillac', level: 'Advanced', instructor: 'Karin Utami',
-    branch: 'Menteng', branchId: 'menteng', studio: 'Studio B',
+  { hari: 1, start: '11:00', end: '11:50', name: 'Sunter Mat Mobility',
+    type: 'mat', level: 'Beginner', instructor: 'Wahyu Nugroho',
+    branch: 'Sunter', branchId: 'sunter', studio: 'Studio 1',
+    capacity: 10, usesPackage: true },
+  { hari: 1, start: '19:00', end: '19:50', name: 'Sampoerna Reformer Flow',
+    type: 'reformer', level: 'Intermediate', instructor: 'Sarah Adistya',
+    branch: 'Sampoerna Strategic', branchId: 'sampoerna', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+
+  // Selasa
+  { hari: 2, start: '08:00', end: '08:50', name: 'Pondok Indah Mat Basics',
+    type: 'mat', level: 'Beginner', instructor: 'Gaga Permana',
+    branch: 'Pondok Indah', branchId: 'pondokindah', studio: 'Studio 1',
+    capacity: 10, usesPackage: true },
+  { hari: 2, start: '15:00', end: '15:50', name: 'Bekasi Reformer Strength',
+    type: 'reformer', level: 'Intermediate', instructor: 'Malik Hidayat',
+    branch: 'Bekasi', branchId: 'bekasi', studio: 'Studio A',
+    capacity: 5, usesPackage: true },
+  { hari: 2, start: '17:00', end: '17:50', name: 'BSD Cadillac Strength',
+    type: 'cadillac', level: 'Intermediate', instructor: 'Karin Utami',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
     capacity: 4, usesPackage: false },
-  { hari: 6, start: '08:30', end: '09:20', name: 'Weekend Reformer Reset',
-    type: 'reformer', level: 'All Levels', instructor: 'Gaga Permana',
-    branch: 'TB Simatupang', branchId: 'simatupang', studio: 'Studio A',
+
+  // Rabu
+  { hari: 3, start: '09:15', end: '10:05', name: 'Kemang Core & Mobility',
+    type: 'mat', level: 'Beginner', instructor: 'Nadia Prasetyo',
+    branch: 'Kemang', branchId: 'kemang', studio: 'Studio 1',
+    capacity: 12, usesPackage: true },
+  { hari: 3, start: '10:00', end: '10:50', name: 'Sampoerna Cadillac Alignment',
+    type: 'cadillac', level: 'Intermediate', instructor: 'Karin Utami',
+    branch: 'Sampoerna Strategic', branchId: 'sampoerna', studio: 'Studio B',
+    capacity: 4, usesPackage: false },
+  { hari: 3, start: '17:00', end: '17:50', name: 'Bintaro Tower Strength',
+    type: 'tower', level: 'Intermediate', instructor: 'Nadia Prasetyo',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio B',
+    capacity: 3, usesPackage: true },
+
+  // Kamis
+  { hari: 4, start: '08:30', end: '09:20', name: 'BSD Mat Basics',
+    type: 'mat', level: 'Beginner', instructor: 'Gaga Permana',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio B',
+    capacity: 10, usesPackage: true },
+  { hari: 4, start: '09:30', end: '10:20', name: 'Bekasi Prenatal Pilates',
+    type: 'prenatal', level: 'All Levels', instructor: 'Gaga Permana',
+    branch: 'Bekasi', branchId: 'bekasi', studio: 'Studio B',
+    capacity: 4, usesPackage: true },
+  { hari: 4, start: '18:30', end: '19:20', name: 'Pondok Indah Reformer Power',
+    type: 'reformer', level: 'Intermediate', instructor: 'Nadia Prasetyo',
+    branch: 'Pondok Indah', branchId: 'pondokindah', studio: 'Studio A',
     capacity: 6, usesPackage: true },
-  { hari: 0, start: '09:00', end: '09:50', name: 'Sunday Mat Reset',
+
+  // Jumat
+  { hari: 5, start: '09:15', end: '10:05', name: 'Bintaro Cadillac Reset',
+    type: 'cadillac', level: 'All Levels', instructor: 'Karin Utami',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio A',
+    capacity: 4, usesPackage: false },
+  { hari: 5, start: '11:30', end: '12:20', name: 'Sunter Weekend Reformer',
+    type: 'reformer', level: 'All Levels', instructor: 'Karin Utami',
+    branch: 'Sunter', branchId: 'sunter', studio: 'Studio 1',
+    capacity: 4, usesPackage: true },
+  { hari: 5, start: '19:00', end: '19:50', name: 'Kemang Reformer Sculpt',
+    type: 'reformer', level: 'Beginner/Intermediate', instructor: 'Sarah Adistya',
+    branch: 'Kemang', branchId: 'kemang', studio: 'Studio 1',
+    capacity: 6, usesPackage: true },
+
+  // Sabtu
+  { hari: 6, start: '08:00', end: '08:50', name: 'Sampoerna Mat Flow',
     type: 'mat', level: 'All Levels', instructor: 'Wahyu Nugroho',
-    branch: 'Senopati Sanctuary', branchId: 'senopati', studio: 'Studio A',
+    branch: 'Sampoerna Strategic', branchId: 'sampoerna', studio: 'Studio 1',
+    capacity: 10, usesPackage: true },
+  { hari: 6, start: '09:00', end: '09:50', name: 'Bekasi Weekend Reset',
+    type: 'mat', level: 'All Levels', instructor: 'Sarah Adistya',
+    branch: 'Bekasi', branchId: 'bekasi', studio: 'Studio A',
+    capacity: 10, usesPackage: true },
+  { hari: 6, start: '10:30', end: '11:20', name: 'BSD Reformer Power',
+    type: 'reformer', level: 'Advanced', instructor: 'Nadia Prasetyo',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+
+  // Minggu
+  { hari: 0, start: '07:30', end: '08:20', name: 'Bintaro Reformer Morning',
+    type: 'reformer', level: 'All Levels', instructor: 'Sarah Adistya',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio A',
+    capacity: 6, usesPackage: true },
+  { hari: 0, start: '08:00', end: '08:50', name: 'Sunter Sunday Reset',
+    type: 'reformer', level: 'Intermediate', instructor: 'Malik Hidayat',
+    branch: 'Sunter', branchId: 'sunter', studio: 'Studio 1',
+    capacity: 6, usesPackage: true },
+  { hari: 0, start: '09:00', end: '09:50', name: 'Pondok Indah Mat Flow',
+    type: 'mat', level: 'All Levels', instructor: 'Gaga Permana',
+    branch: 'Pondok Indah', branchId: 'pondokindah', studio: 'Studio 1',
     capacity: 10, usesPackage: true }
 ];
 
@@ -611,39 +550,6 @@ const TOPUP_OPTIONS = [
    The Body Project. Ganti dengan foto asli sebelum dipakai. */
 const BRANCH_DETAILS = [
   {
-    id: 'senopati',
-    name: 'Senopati Sanctuary',
-    area: 'Jakarta Selatan',
-    address: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-    hours: '06.30 – 20.30 WIB',
-    phone: '+62 21 0000 0001',
-    distance: '1.2 km',
-    cover: 'assets/branches/senopati.jpg',
-    status: 'Aktif',
-    flag: true,
-    facilities: [
-      { icon: '⊞', label: '10 Reformer Beds' },
-      { icon: '◫', label: '2 Private Suites' },
-      { icon: '⚑', label: 'Valet Parking' },
-      { icon: '◠', label: 'Rainforest Shower' }
-    ]
-  },
-  {
-    id: 'simatupang',
-    name: 'TB Simatupang',
-    area: 'Jakarta Selatan',
-    address: 'Jl. TB Simatupang No. 18, Cilandak, Jakarta Selatan',
-    hours: '06.30 – 20.30 WIB',
-    phone: '+62 21 0000 0002',
-    distance: '4.8 km',
-    cover: 'assets/branches/simatupang.jpg',
-    status: 'Aktif',
-    facilities: [
-      { icon: '⊞', label: '6 Reformer Beds' },
-      { icon: '⚑', label: 'Valet Parking' }
-    ]
-  },
-  {
     id: 'kemang',
     name: 'Kemang',
     area: 'Jakarta Selatan',
@@ -657,37 +563,6 @@ const BRANCH_DETAILS = [
     facilities: [
       { icon: '⊞', label: '6 Reformer Beds' },
       { icon: '◫', label: '1 Private Suite' },
-      { icon: '⚑', label: 'Free Parking' }
-    ]
-  },
-  {
-    id: 'grandindonesia',
-    name: 'Grand Indonesia',
-    area: 'Jakarta Utara',
-    address: 'Jl. Asia Afrika No. 3, Jakarta Pusat',
-    hours: '06.00 – 21.00 WIB',
-    phone: '+62 21 0000 0004',
-    distance: '9.1 km',
-    cover: 'assets/branches/grandindonesia.jpg',
-    status: 'Aktif',
-    facilities: [
-      { icon: '⊞', label: '8 Reformer Beds' },
-      { icon: '◫', label: '2 Private Suites' },
-      { icon: '⚑', label: 'Valet Parking' }
-    ]
-  },
-  {
-    id: 'pik',
-    name: 'PIK Avenue',
-    area: 'Jakarta Utara',
-    address: 'Jl. Ravel No. 1, Penjaringan, Jakarta Utara',
-    hours: '06.30 – 20.30 WIB',
-    phone: '+62 21 0000 0005',
-    distance: '16.4 km',
-    cover: 'assets/branches/pik.jpg',
-    status: 'Aktif',
-    facilities: [
-      { icon: '⊞', label: '5 Reformer Beds' },
       { icon: '⚑', label: 'Free Parking' }
     ]
   },
@@ -835,10 +710,10 @@ const riwayatSesi = (cabang, hari, sesi) =>
   `${cabang} · ${ringkasTanggal(tanggalRelatif(hari))} · Sesi ke-${sesi}`;
 
 const HISTORY = [
-  { id: 'h1', icon: '✓', title: 'Reformer Sculpt & Core', sub: riwayatSesi('Senopati', -8, 5),  side: 'Selesai',    sideType: 'done' },
-  { id: 'h2', icon: '✓', title: 'Mat Floor Basics',       sub: riwayatSesi('Senopati', -11, 4), side: 'Selesai',    sideType: 'done' },
-  { id: 'h3', icon: '✗', title: 'Core & Fluid Flow',      sub: riwayatSesi('Senopati', -14, 3), side: 'Dibatalkan', sideType: 'void' },
-  { id: 'h4', icon: '✓', title: 'Reformer Power Flow',    sub: riwayatSesi('Senopati', -17, 2), side: 'Selesai',    sideType: 'done' }
+  { id: 'h1', icon: '✓', title: 'Bintaro Reformer Sculpt', sub: riwayatSesi('Bintaro', -8, 5),  side: 'Selesai',    sideType: 'done' },
+  { id: 'h2', icon: '✓', title: 'Sunter Mat Mobility',     sub: riwayatSesi('Sunter', -11, 4),  side: 'Selesai',    sideType: 'done' },
+  { id: 'h3', icon: '✗', title: 'Bekasi Weekend Reset',   sub: riwayatSesi('Bekasi', -14, 3),  side: 'Dibatalkan', sideType: 'void' },
+  { id: 'h4', icon: '✓', title: 'Bintaro Cadillac Reset',  sub: riwayatSesi('Bintaro', -17, 2), side: 'Selesai',    sideType: 'done' }
 ];
 
 const POLICIES = [
