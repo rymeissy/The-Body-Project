@@ -223,10 +223,6 @@ a { color: var(--green-700); }
   gap: 12px;
   text-align: center;
 }
-.profile-guest__icon {
-  font-size: 26px;
-  line-height: 1;
-}
 .profile-guest__text {
   margin: 0;
   max-width: 30ch;
@@ -1638,8 +1634,7 @@ a { color: var(--green-700); }
   text-align: center;
   color: var(--ink-400);
 }
-.empty__icon { font-size: 30px; opacity: .4; }
-.empty p { font-size: 13px; margin-top: 8px; }
+.empty p { font-size: 13px; }
 
 /* ---------- 11. Bottom sheet ---------- */
 .backdrop {

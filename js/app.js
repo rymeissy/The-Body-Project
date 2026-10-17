@@ -607,9 +607,7 @@
         <div class="class-card__tags">
           <span class="tag tag--level">${k.level}</span>
           ${k.usesPackage ? `
-            <span class="tag tag--cover">
-              <span class="tag__icon" aria-hidden="true">🛡</span> Dapat kuota paket
-            </span>` : ''}
+            <span class="tag tag--cover">Dapat kuota paket</span>` : ''}
         </div>
 
         <div class="class-card__foot">
@@ -653,7 +651,6 @@
       const namaCabang = state.branch === 'all' ? '' : ' di ' + branchName(state.branch);
       list.innerHTML = `
         <div class="empty" style="grid-column:1/-1;">
-          <div class="empty__icon" aria-hidden="true">🗓️</div>
           <p>Tidak ada kelas${namaCabang} pada tanggal ini.<br>
              Coba pilih tanggal lain atau ganti filter tipe.</p>
         </div>`;
