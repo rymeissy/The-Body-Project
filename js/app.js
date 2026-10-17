@@ -494,17 +494,78 @@
     return (eh * 60 + em) - (sh * 60 + sm);
   }
 
+  /* Ikon pil kuota untuk kelas yang belum penuh.
+
+     Dua status hijau memakai centang, sisa satu slot memakai tanda seru --
+     keduanya berbentuk lingkaran r=10 di viewBox 24, persis sama. Mata jadi
+     baca sebagai satu kelompok status, bukan dua ikon asing.
+
+     Bentuk orang sudah dicoba lebih dulu (users, users-round, dan "group" dari
+     Material Symbols) dan semuanya gagal di ukuran ini: pilnya cuma 11px
+     dengan teks 10px, sedangkan bentuk yang lebih-detail sudah berubah begitu
+     dikecilkan ke bawah 14px -- users-round jadi dome tanpa bulan sabit,
+     group yang ikon padat cuma jadi gumpalan hijau. Lingkaran dengan satu
+     lambang di dalamnya adalah bentuk paling sederhana yang masih terbaca
+     di 11px.
+
+     circle-alert memakai y1 7.5, bukan 8 seperti aslinya: di 11px itu menambah
+     sekitar setengah piksel panjang garisnya, supaya tangan "!" tidak pendek. */
+  function quotaIcon(menipis) {
+    return menipis
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+           <circle cx="12" cy="12" r="10"/>
+           <line x1="12" x2="12" y1="7.5" y2="12.5"/>
+           <line x1="12" x2="12.01" y1="16" y2="16"/>
+         </svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+           <circle cx="12" cy="12" r="10"/>
+           <path d="m9 12 2 2 4-4"/>
+         </svg>`;
+  }
+
   function statusBadge(k) {
     const left = k.capacity - k.taken;
 
+    const pill = (kelas, ikon, teks) =>
+      `<span class="quota-pill${kelas ? ' ' + kelas : ''}">
+         <span class="quota-pill__icon" aria-hidden="true">${ikon}</span>
+         ${teks}
+       </span>`;
+
+    // Habis. Emas, bukan merah: kelas yang penuh bukan kesalahan, dan di
+    // titik ini tidak ada lagi yang perlu buru-buru.
     if (left === 0) {
-      return `<span class="quota-pill is-full">
-                <span aria-hidden="true">⊘</span> Penuh · Waitlist ${k.waitlist}
-              </span>`;
+      return pill('is-full',
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 22h14"/>
+          <path d="M5 2h14"/>
+          <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
+          <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+        </svg>`,
+        `Penuh (Waitlist: ${k.waitlist} orang)`);
     }
-    return `<span class="quota-pill">
-              <span aria-hidden="true">⊕</span> Sisa ${left} dari ${k.capacity} slot
-            </span>`;
+
+    // Belum ada satu pun yang memesan. "Sisa 6 dari 6 slot" kedengarannya
+    // seperti sedang hampir habis -- padahal semua slot masih kosong
+    //-mentah. Disebut "Tersedia" supaya kelas yang baru dibuka bedanya
+    // jelas dari kelas yang sudah mulai terisi.
+    //
+    // Diperiksa sebelum left === 1: kelas 1 slot yang belum dibooking memang
+    // menyisakan satu slot, tapi tidak sedang mendesak.
+    if (k.taken === 0) {
+      return pill('', quotaIcon(false), `Tersedia: ${left} slot`);
+    }
+
+    // Tersisa satu slot: badge merah dengan tanda seru.
+    if (left === 1) {
+      return pill('is-last', quotaIcon(true),
+        `Sisa ${left} dari ${k.capacity} slot`);
+    }
+
+    return pill('', quotaIcon(false), `Sisa ${left} dari ${k.capacity} slot`);
   }
 
   function classCard(k) {
@@ -547,7 +608,13 @@
           <button class="btn ${full ? 'btn--waitlist' : 'btn--primary'}"
                   type="button" data-book="${k.id}">
             ${full
-              ? '<span aria-hidden="true">🔔</span> Gabung Waitlist'
+              ? `<span class="btn__icon" aria-hidden="true">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                     <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                     <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+                   </svg>
+                 </span> Gabung Waitlist`
               : 'Book Sesi <span aria-hidden="true">→</span>'}
           </button>
         </div>

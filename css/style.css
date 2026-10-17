@@ -25,7 +25,7 @@
   --gold-600: #A8863C;
   --gold-100: #F7EFDC;
 
-  /* Merah — penuh / waitlist */
+  /* Merah — validasi formulir (field is-invalid, pesan error) */
   --red-700: #B23B2E;
   --red-100: #FBEBE8;
 
@@ -957,6 +957,10 @@ a { color: var(--green-700); }
   margin-top: 3px;
 }
 
+/* Pil kuota. Ikonnya SVG inline, bukan karakter: "Penuh" memakai hourglass
+   (Lucide) sesuai rancangan Figma, "Sisa" memakai circle-plus.
+   Stroke ditipiskan ke 2.6 karena viewBox 24px di-render 11px -- dengan 2
+   goresnya cuma ~0.9px dan bentuknya kabur, sama seperti ikon jam 13px. */
 .quota-pill {
   display: inline-flex;
   align-items: center;
@@ -969,7 +973,18 @@ a { color: var(--green-700); }
   border-radius: var(--r-full);
   white-space: nowrap;
 }
-.quota-pill.is-full { color: var(--red-700); background: var(--red-100); }
+.quota-pill__icon { display: grid; place-items: center; }
+.quota-pill__icon svg { display: block; width: 11px; height: 11px; }
+
+/* Penuh tidak merah. Merah itu bahasa "ada yang salah" dan dipakai buat
+   validasi formulir; kelas yang cuma penuh itu bukan kesalahan, dan Figma
+   menaruhnya di emas. */
+.quota-pill.is-full { color: var(--gold-700); background: var(--gold-100); }
+
+/* Tersisa satu slot: merah, karena itu satu-satunya saat kabar ini ikut
+   mendesak. Badge hijau dipakai lagi begitu menyingkir dari angka itu, jadi
+   merah di sini tidak pernah muncul bersamaan dengan hijau. */
+.quota-pill.is-last { color: var(--red-700); background: var(--red-100); }
 
 .class-card__title {
   font-size: 17px;
@@ -1113,7 +1128,7 @@ a { color: var(--green-700); }
 }
 .tag--level   { background: var(--green-50);  color: var(--green-700); }
 .tag--quota   { background: var(--gold-100);  color: var(--gold-700); }
-.tag--full    { background: var(--red-100);   color: var(--red-700); }
+.tag--full    { background: var(--gold-100);   color: var(--gold-700); }
 .tag--branch  { background: var(--cream-200); color: var(--ink-600); }
 .tag--tag     { background: var(--green-100); color: var(--green-800); }
 
@@ -1156,6 +1171,11 @@ a { color: var(--green-700); }
   color: var(--green-800);
 }
 .btn--waitlist:hover { background: var(--cream-300); }
+
+/* Ikon tombol. Lonceng SVG (Lucide) menggantikan emoji U+1F514, yang
+   dirender berwarna kuning-warna oleh sistem dan tidak ikut warna tombol. */
+.btn__icon { display: grid; place-items: center; }
+.btn__icon svg { display: block; width: 15px; height: 15px; }
 
 /* ---------- 9b. Kartu cabang ---------- */
 .branch-list { display: grid; gap: 14px; }
