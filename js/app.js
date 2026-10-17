@@ -918,6 +918,17 @@
     }).join('');
 
     $('#historyCount').textContent = HISTORY.length + ' item';
+
+    // Kalimatnya dihitung, bukan diketik. Jumlahnya ikut berubah setiap kali
+    // ada pemesanan atau pembatalan baru, dan tahun ikut berjalan sendiri --
+    // kalau ditulis mati, kalimat ini akan menyebut 12 kelas padahal yang ada
+    // cuma beberapa, dan akan tetap menyebut 2026 selamanya.
+    const ringkasEl = $('#historySummary');
+    if (ringkasEl) {
+      const n = HISTORY.length;
+      ringkasEl.textContent = n + (n === 1 ? ' kelas' : ' kelas')
+        + ' sepanjang ' + TAHUN_INI;
+    }
   }
 
   /* ======================================================================
@@ -1812,6 +1823,14 @@
     // Tanggal bergabung = hari akun dibuat
     const sinceEl = $('#profileSince');
     if (sinceEl && user.since) sinceEl.textContent = user.since;
+
+    // Jumlah paket aktif ikut dihitung. Menyalin angka ke sini akan cepat salah
+    // begitu ada top up atau paket yang habis.
+    const pkgEl = $('#activePkgCount');
+    if (pkgEl) {
+      const n = PACKAGES.filter(p => p.status === 'Aktif').length;
+      pkgEl.textContent = n + (n === 1 ? ' paket' : ' paket');
+    }
 
     // Nama di sheet pemesanan
     $$('#sheetBody .kv').forEach(row => {

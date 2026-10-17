@@ -47,10 +47,27 @@ DECLARE
     bk   bookings%ROWTYPE;
     c_id bigint := (SELECT id FROM users WHERE email = 'anindya@kranulo.com');
 BEGIN
-    SELECT session_id INTO s_id
-    FROM v_session_availability
-    WHERE status = 'Terjadwal' AND starts_at > now() AND slots_left > 0
-    ORDER BY starts_at
+    -- Pick a session this customer is not already in. Without that guard the
+    -- test depends on what the seed happens to have booked: it used to pass only
+    -- because the seed filled Senopati alone, and Anindya's own bookings were
+    -- all there. Now that bookings are spread over every branch, "the nearest
+    -- session with a free seat" can easily be one she already holds, and
+    -- fn_book_session correctly refuses with "Pengguna sudah memesan".
+    --
+    -- uses_package is required for the same reason: this test is about spending
+    -- package quota, so a class that cannot be paid that way has to be ruled out
+    -- rather than hoped over. Cadillac and Tower classes are not package-eligible.
+    SELECT v.session_id INTO s_id
+    FROM v_session_availability v
+    WHERE v.status = 'Terjadwal' AND v.starts_at > now() AND v.slots_left > 0
+      AND v.uses_package
+      AND NOT EXISTS (
+          SELECT 1 FROM bookings b
+          WHERE b.session_id = v.session_id
+            AND b.customer_id = c_id
+            AND b.status IN ('Terjual', 'Menunggu Waitlist')
+      )
+    ORDER BY v.starts_at
     LIMIT 1;
 
     bk := fn_book_session(c_id, s_id, true);
@@ -119,9 +136,25 @@ DECLARE
     bk   bookings%ROWTYPE;
     c_id bigint := (SELECT id FROM users WHERE email = 'intan@mail.com');
 BEGIN
-    SELECT session_id INTO s_id
-    FROM v_session_availability
-    WHERE waitlist_count > 0
+    -- Any class that is already full will do -- the point is that booking into
+    -- one lands on the waitlist, not that a waitlist already exists. Prefer one
+    -- that already has a waitlist. Two guards: the class must be in the future,
+    -- and this customer must not already hold a seat in it, or the booking is
+    -- (correctly) rejected as a duplicate before the waitlist logic is reached.
+    -- uses_package too, since this call passes true for "spend package quota".
+    SELECT v.session_id INTO s_id
+    FROM v_session_availability v
+    WHERE v.status = 'Terjadwal'
+      AND v.starts_at > now()
+      AND v.slots_left = 0
+      AND v.uses_package
+      AND NOT EXISTS (
+          SELECT 1 FROM bookings b
+          WHERE b.session_id = v.session_id
+            AND b.customer_id = c_id
+            AND b.status IN ('Terjual', 'Menunggu Waitlist')
+      )
+    ORDER BY v.waitlist_count DESC, v.starts_at
     LIMIT 1;
 
     bk := fn_book_session(c_id, s_id, true);

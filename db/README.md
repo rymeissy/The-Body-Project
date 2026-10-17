@@ -19,7 +19,7 @@ The three SQL files run automatically on first start, in order:
 |---|---|
 | `schema.sql` | Extensions, 15 tables, indexes, constraints, triggers, 4 views |
 | `functions.sql` | 17 functions, the booking-code sequence, OTP settings |
-| `seed.sql` | Reference data, 8 branches, 8 class templates, 90 days of sessions, demo bookings |
+| `seed.sql` | Reference data, 7 branches, 21 class templates, 30 days back and 90 days forward of sessions, demo bookings |
 
 Rebuild from scratch after editing any of them:
 
@@ -62,14 +62,14 @@ that must print five zeros.
 
 | Table | Holds |
 |---|---|
-| `branches` | 8 studios, hours, distance, flagship flag |
+| `branches` | 7 studios, hours, distance, flagship flag |
 | `branch_facilities` | Facility chips per branch |
 | `studios` | Rooms inside a branch |
 | `instructors` | Name and role title |
-| `class_types` | Reformer, Mat Flow, Cadillac, Prenatal |
+| `class_types` | Reformer, Mat Flow, Cadillac, Prenatal, Tower |
 | `class_templates` | The weekly recurring pattern |
 | `class_sessions` | A bookable occurrence on a specific date |
-| `users` | Customers and admins, bcrypt password hash |
+| `users` | Customers and admins, identified by verified phone number |
 | `packages` | Products for sale |
 | `customer_packages` | A package held by one customer, with its remaining quota |
 | `payment_methods` | QRIS, BCA VA, GoPay/OVO, credit card |
@@ -185,23 +185,38 @@ The app should call `fn_book_session`, not insert into `bookings` directly.
 
 | | |
 |---|---|
-| Branches | 8 |
-| Class templates | 8 weekly slots |
-| Sessions | 103, from 12 Oct 2026 through 9 Jan 2027 |
+| Branches | 7, in the order the front-end lists them |
+| Class templates | 21 weekly slots, three a day across seven branches |
+| Sessions | 363, from 30 days back through 90 days forward of the seed date |
 | Customers | 13 + 1 admin, all phone-verified and already named |
-| Bookings | 239, including one full class with a 2-person waitlist |
+| Bookings | 127, one full class per branch, one of them with a 2-person waitlist |
+
+Session dates are anchored on `CURRENT_DATE`, not written into the file, so
+re-seeding always gives a fresh 30-days-back / 90-days-forward window. `js/data.js`
+does the same with `CAL_TODAY`.
+
+Bookings are spread over every branch, at three fill levels per branch: one class
+right up, one with a single seat left, one about half full. That way all three
+quota badges appear on every branch without filling the whole 90-day timetable.
+Package quota is allocated against what each customer actually has left and is
+decremented to match, so `remaining_sessions` never disagrees with the bookings
+that point at it.
 
 Seeded accounts never trigger the name form, so signing in with any of their
 numbers goes straight into the app.
 
-Passwords in the seed are all `password123`, hashed with `crypt()` from
-`pgcrypto`. They are only there so the sample data has a value in the column —
-the app never authenticates with one.
+There is no password column and no password anywhere in the seed. Signing in is
+phone number plus a one-time code; `verify.sql` test 21 asserts that neither
+`password_hash` nor `loyalty_points` exists. The `pgcrypto` extension is still
+installed for `gen_salt`/`crypt`, which is what a later revision would use if
+password login were ever added.
 
-One deliberate difference from `../js/data.js`: the Friday Cadillac template
-points at branch id `menteng`, but `BRANCH_DETAILS` there has no Menteng branch
-(it lists Kemang instead), so the reference dangles. Here it is assigned to
-Kemang.
+There are no deliberate differences from `../js/data.js` any more. `class_templates`
+holds the same 21 weekly patterns as `JADWAL_MINGGUAN`, every one pointing at a
+branch that exists. The old seed had a Friday Cadillac template pointing at branch
+id `menteng`, which `BRANCH_DETAILS` never defined, so it was quietly reassigned
+to Kemang; that template is gone along with Menteng, Senopati, TB Simatupang,
+Grand Indonesia, and PIK Avenue.
 
 `fn_expire_packages()` and `fn_close_finished_sessions()` are called once at the
 end of the seed. In production they belong in a nightly job.

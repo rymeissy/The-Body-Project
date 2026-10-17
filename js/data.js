@@ -426,13 +426,19 @@ const VALIDITAS_HARI = { p10: 180, p5: 90 };
    ditampilkan. Kalau top up perlu memperpanjang masa berlaku, teks itu
    harus diurai dulu -- dan mengurai tanggal dari teks yang sudah diformat
    menghasilkan tanggal yang rapuh. Angkanya yang disimpan; teksnya yang
-   diturunkan. */
+   diturunkan.
+
+   Sisa sesi di sini sengaja sama dengan yang tercatat di database: paket 10
+   sesi dibuat dengan sisa 6, lalu terpakai 3 oleh riwayat lama dan 1 lagi oleh
+   pemesanan contoh, jadi tersisa 2. Kalau salah satu berubah di sini,
+   seed.sql juga harus menyesuaikan -- kalau tidak, profil di prototipe dan
+   profil di database akan berbeda cerita. */
 const PACKAGES = [
   {
     id: 'p10',
     name: 'Paket 10 Sesi Pilates',
     status: 'Aktif',
-    total: 10, remaining: 6,
+    total: 10, remaining: 2,
     validityDays: VALIDITAS_HARI.p10,
     expires: ringkasTanggal(tanggalRelatif(VALIDITAS_HARI.p10)),
     includes: 'Termasuk Reformer & Cadillac',
