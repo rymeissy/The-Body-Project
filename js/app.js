@@ -194,7 +194,15 @@
 
     card.innerHTML = `
       <div class="pkg-card__top">
-        <span class="pkg-card__icon" aria-hidden="true">✂</span>
+        <span class="pkg-card__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+            <path d="M20 2v4"/>
+            <path d="M22 4h-4"/>
+            <circle cx="4" cy="20" r="2"/>
+          </svg>
+        </span>
         <div class="pkg-card__id">
           <p class="pkg-card__name">
             ${p.name}
@@ -587,8 +595,20 @@
   /* ======================================================================
      RENDER VIEW: CABANG
      ====================================================================== */
-  const mapsLink = addr =>
-    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+  /* Tautan peta untuk sebuah cabang.
+
+     address dipakai dua hal sekaligus: teks yang tampil di kartu, dan
+     kueri pencarian ke Maps. Keduanya tidak selalu bisa sama -- alamat resmi
+     dari Maps jauh lebih panjang daripada yang enak dibaca di kartu (RT/RW,
+     kecamatan, kota, kode pos), dan sebaliknya kueri yang hanya berisi nama
+     jalan bisa meleset ke titik yang salah.
+
+     Karena itu opsional ada mapsUrl: kalau diisi, tombol peta memakai URL itu
+     persis apa adanya -- shortlink maps.app.goo.gl yang sudah diurai ke URL
+     tempat sebenarnya. Kalau tidak, jatuh ke pencarian biasa berdasarkan
+     address, seperti cabang yang lain. */
+  const mapsLink = b => b.mapsUrl ||
+    'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(b.address);
 
   function branchName(id) {
     const b = BRANCH_DETAILS.find(x => x.id === id);
@@ -659,8 +679,15 @@
 
             <div class="branch-card__overlay">
               <span class="pill pill--dark">
-                <span aria-hidden="true">◷</span> Buka Hari Ini
-                <span class="pill__sep" aria-hidden="true">•</span> ${b.hours}
+                <svg class="pill__icon" viewBox="0 0 24 24" width="13" height="13" fill="none"
+                     stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 7.2V12"/>
+                  <path d="M12 12l3.3 2.1"/>
+                </svg>
+                Buka Hari Ini
+                <span class="pill__sep" aria-hidden="true">&bull;</span> ${b.hours}
               </span>
               <span class="pill pill--dark">
                 <span aria-hidden="true">➤</span> ${b.distance}
@@ -704,7 +731,7 @@
               Lihat Jadwal (${sesi} Sesi)
             </button>
 
-            <a class="btn-map" href="${mapsLink(b.address)}"
+            <a class="btn-map" href="${mapsLink(b)}"
                target="_blank" rel="noopener noreferrer"
                aria-label="Buka ${b.name} di Google Maps">
               <span aria-hidden="true">

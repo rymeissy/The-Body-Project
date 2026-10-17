@@ -291,7 +291,7 @@ const CLASSES = [
     type: 'cadillac',
     level: 'Intermediate',
     instructor: 'Karin Utami',
-    branch: 'Tangerang Selatan', branchId: 'tangerang', studio: 'Studio A',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
     capacity: 4, taken: 1, waitlist: 0,
     usesPackage: false
   },
@@ -320,11 +320,11 @@ const CLASSES = [
   {
     id: 'c17', day: hari(4),
     start: '08:30', end: '09:20',
-    name: 'Tangerang Mat Basics',
+    name: 'BSD Mat Basics',
     type: 'mat',
     level: 'Beginner',
     instructor: 'Gaga Permana',
-    branch: 'Tangerang Selatan', branchId: 'tangerang', studio: 'Studio B',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio B',
     capacity: 10, taken: 3, waitlist: 0,
     usesPackage: true
   },
@@ -357,7 +357,7 @@ const CLASSES = [
     type: 'reformer',
     level: 'Advanced',
     instructor: 'Nadia Prasetyo',
-    branch: 'Tangerang Selatan', branchId: 'tangerang', studio: 'Studio A',
+    branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
     capacity: 6, taken: 4, waitlist: 0,
     usesPackage: true
   }
@@ -671,7 +671,8 @@ const BRANCH_DETAILS = [
     id: 'bekasi',
     name: 'Bekasi',
     area: 'Bekasi',
-    address: 'Jl. Ahmad Yani No. 65, Bekasi',
+    address: 'Jl. Rukan Sentra Niaga 3 No.6, Jaka Setia, Bekasi',
+    mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Galaxy/@-6.2751828,106.9740888,17z/data=!3m1!4b1!4m6!3m5!1s0x2e698d001feec333:0x19f204279cf1c5d6!8m2!3d-6.2751828!4d106.9740888!16s%2Fg%2F11lyjb0msz',
     hours: '06.30 – 20.30 WIB',
     phone: '+62 21 0000 0007',
     distance: '21.3 km',
@@ -684,14 +685,15 @@ const BRANCH_DETAILS = [
     ]
   },
   {
-    id: 'tangerang',
-    name: 'Tangerang Selatan',
+    id: 'bsd',
+    name: 'BSD',
     area: 'Tangerang Selatan',
-    address: 'Jl. BSD Utama No. 1, BSD City, Tangerang Selatan',
+    address: 'Lengkong Kulon, Kec. Pagedangan, Kabupaten Tangerang',
+    mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+BSD/@-6.2889035,106.6396704,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69fb29923e4177:0x8da9d608e29e53dc!8m2!3d-6.2889035!4d106.6396704!16s%2Fg%2F11kq7v638d',
     hours: '06.30 – 21.00 WIB',
     phone: '+62 21 0000 0008',
     distance: '28.6 km',
-    cover: 'assets/branches/tangerang.jpg',
+    cover: 'assets/branches/bsd.jpg',
     status: 'Aktif',
     facilities: [
       { icon: '⊞', label: '6 Reformer Beds' },
