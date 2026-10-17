@@ -971,6 +971,10 @@
     btn.disabled = true;
     teks.textContent = 'Mencari lokasi…';
 
+    // Kasih tahu pengguna apa yang sedang ditunggu. Pencarian di desktop
+    // bisa memakan 25 detik, dan tanpa keterangan tombol yang diam itu
+    $('#locSub').textContent = 'Tunggu sebentar, sedang mencari titik lokasi…';
+
     // navigator.geolocation dicek langsung, bukan hanya dengan "in navigator",
     // karena ada lingkungan di mana propertinya ada tapi nilainya kosong.
     // Memanggil .getCurrentPosition di sana melempar, dan tidak ada yang
@@ -1022,7 +1026,17 @@
           renderBranches();
           toast(pesanGagalLokasi(err.code));
         },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+        // Timeout 25 detik, bukan 8. Di ponsel, GPS hampir selalu selesai
+        // dalam hitungan detik -- tapi di browser desktop tidak ada cip GPS,
+        // jadi posisi pertama biasanya dicari lewat pemindaian Wi-Fi atau
+        // jaringan, dan itu memang sering memakan 10 sampai 30 detik. Nilai
+        // 8 detik yang dipakai sebelumnya kelewatan cepat untuk kasus desktop,
+        // dan berakhir sebagai timeout padahal posisinya sebentar lagi datang.
+        //
+        // maximumAge 60 detik biar posisi yang sudah pernah diketahui dipakai
+        // lagi; enableHighAccuracy sengaja false karena makin presisi berarti
+        // makin lama, dan yang dibutuhkan di sini cuma urutan.
+        { enableHighAccuracy: false, timeout: 25000, maximumAge: 60000 }
       );
     } catch (e) {
       asalLokasi = null;
