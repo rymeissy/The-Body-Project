@@ -758,6 +758,31 @@ const BRANCH_DETAILS = [
       { icon: '◫', label: '1 Tower Unit' },
       { icon: '⌂', label: 'Ruko Kebayoran Arcade 3' }
     ]
+  },
+  {
+    /* Cabang baru: belumlah ada sesinya, jadi kartu ini sengaja masih
+       menulis "Lihat Jadwal (0 Sesi)". Itu lebih jujur daripada menampilkan
+       jadwal karangan, dan begitu kelasnya ditambah angkanya ikut sendiri.
+
+       Alamat dipangkas dari 210 karakter di Maps menjadi 60 supaya tetap satu
+       baris seperti delapan kartu lainnya. Yang dibuang adalah pengulangan
+       nama gedung ("Sampoerna Strategic Square 3Ath" lalu "North Tower")
+       dan bagian "Daerah Khusus Ibukota Jakarta" yang sudah tercakup oleh
+       "Jakarta Selatan". Koordinat -6.216681, 106.8177653. */
+    id: 'sampoerna',
+    name: 'Sampoerna Strategic',
+    area: 'Jakarta Selatan',
+    address: 'Sampoerna Strategic Square, Jl. Jenderal Sudirman No.45-46',
+    mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Sampoerna/@-6.216681,106.8177653,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f5001d2462e3:0x461e2c87fb67698d!8m2!3d-6.216681!4d106.8177653',
+    hours: '07.30 - 20.30 WIB',
+    distance: '4.6 km',
+    cover: 'assets/branches/sampoerna.jpg',
+    status: 'Aktif',
+    facilities: [
+      { icon: '⊞', label: '4 Reformer Beds' },
+      { icon: '◫', label: '1 Private Suite' },
+      { icon: '⚑', label: 'Valet Parking' }
+    ]
   }
 ];
 

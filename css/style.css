@@ -1325,17 +1325,13 @@ a { color: var(--green-700); }
   color: var(--green-900);
   line-height: 1.25;
 }
+/* Alamat cabang. Sebelumnya diawali ikon pin U+25C9 dalam span tersendiri,
+   dengan gap 6px di sini. Setelah ikon dihapus tidak ada lagi elemen anak
+   selain teks, jadi display flex dan gap juga tidak ada gunanya. */
 .branch-card__addr {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
   font-size: 12px;
   line-height: 1.45;
   color: var(--ink-600);
-}
-.branch-card__addr > span:first-child {
-  flex: 0 0 auto;
-  color: var(--green-700);
 }
 
 .branch-card__tags {

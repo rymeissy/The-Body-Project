@@ -786,9 +786,7 @@
               <span class="tag tag--status">${b.status}</span>
             </div>
 
-            <p class="branch-card__addr">
-              <span aria-hidden="true">◉</span> ${b.address}
-            </p>
+            <p class="branch-card__addr">${b.address}</p>
 
             <!-- Ikon fasilitas disembunyikan sementara. Yang dipakai
                  sebelumnya U+229E, U+25EB, U+2691, U+25E0: semuanya glyph
