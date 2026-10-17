@@ -360,6 +360,43 @@ const CLASSES = [
     branch: 'BSD', branchId: 'bsd', studio: 'Studio A',
     capacity: 6, taken: 4, waitlist: 0,
     usesPackage: true
+  },
+
+  /* Bintaro. Jumlah dan waktunya masih contoh -- koreksi sesuai jadwal asli.
+     taken sengaja varies 0 / 1 / penuh supaya ketiga bentuk badge (Tersedia,
+     Sisa, Penuh) langsung kelihatan di cabang ini saja. */
+  {
+    id: 'c21', day: hari(1),
+    start: '07:30', end: '08:20',
+    name: 'Bintaro Reformer Sculpt',
+    type: 'reformer',
+    level: 'All Levels',
+    instructor: 'Sarah Adistya',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio A',
+    capacity: 6, taken: 0, waitlist: 0,
+    usesPackage: true
+  },
+  {
+    id: 'c22', day: hari(3),
+    start: '17:00', end: '17:50',
+    name: 'Bintaro Tower Strength',
+    type: 'tower',
+    level: 'Intermediate',
+    instructor: 'Nadia Prasetyo',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio B',
+    capacity: 3, taken: 1, waitlist: 0,
+    usesPackage: true
+  },
+  {
+    id: 'c23', day: hari(5),
+    start: '09:15', end: '10:05',
+    name: 'Bintaro Cadillac Reset',
+    type: 'cadillac',
+    level: 'All Levels',
+    instructor: 'Karin Utami',
+    branch: 'Bintaro', branchId: 'bintaro', studio: 'Studio A',
+    capacity: 4, taken: 4, waitlist: 1,
+    usesPackage: false
   }
 ];
 
@@ -489,7 +526,8 @@ const TYPE_LABELS = {
   reformer: 'Reformer',
   mat:      'Mat Flow',
   cadillac: 'Cadillac',
-  prenatal: 'Prenatal'
+  prenatal: 'Prenatal',
+  tower:    'Tower'
 };
 
 const DROPIN_PRICE = 375000;
@@ -699,6 +737,25 @@ const BRANCH_DETAILS = [
       { icon: '⊞', label: '6 Reformer Beds' },
       { icon: '◫', label: '2 Private Suites' },
       { icon: '⚑', label: 'Free Parking' }
+    ]
+  },
+  {
+    // Tanpa phone: cabang ini tidak punya nomor yang bisa ditampilkan, dan
+    // kolom phone tidak pernah dibaca app.js -- jadi tidak diisi apa pun,
+    // bukan diisi placeholder.
+    id: 'bintaro',
+    name: 'Bintaro',
+    area: 'Tangerang Selatan',
+    address: 'Jl. Boulevard Bintaro Jaya No.10, Sektor 7, Tangerang Selatan',
+    mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Bintaro+Studio/@-6.2738935,106.710822,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69fb22f8011c8b:0xc6f5afd3eb3c624e!8m2!3d-6.2738935!4d106.710822',
+    hours: '07.00 – 17.00 WIB',
+    distance: '24.2 km',
+    cover: 'assets/branches/bintaro.jpg',
+    status: 'Aktif',
+    facilities: [
+      { icon: '⊞', label: '4 Reformer Beds' },
+      { icon: '◫', label: '1 Tower Unit' },
+      { icon: '⌂', label: 'Ruko Kebayoran Arcade 3' }
     ]
   }
 ];
