@@ -144,6 +144,14 @@
   }
 
   function renderCalendar() {
+    /* Judul bulan ikut tanggal yang sedang dipilih, bukan ditulis mati di
+       HTML. Kalau ditulis mati, begitu tanggalnya berganti bulan judulnya
+       tetap diam sementara deret tanggalnya sudah maju — persis kesalahan
+       yang pernah ada sebelum ini: "Oktober 2026" terkunci di markup. */
+    const judul = toDate(state.day);
+    $('#calTitle').textContent =
+      `${NAMA_BULAN[judul.getMonth()]} ${judul.getFullYear()}`;
+
     const days = stripDays(state.stripFrom);
 
     $('#calRow').innerHTML = days.map(d => {
