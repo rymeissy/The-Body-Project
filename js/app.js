@@ -77,6 +77,41 @@
     topupId: null
   };
 
+  /* ======================================================================
+     JARAK KE CABANG
+     ====================================================================== */
+
+  /* Jarak dihitung sebagai jarak lingkaran bumi, bukan jarak jalan. Garis lurus
+     selalu lebih pendek daripada jalur yang benar-benar ditempuh, tapi untuk
+     menjawab "cabang mana yang paling dekat" angka ini jelas lebih berguna
+     daripada tidak ada. Menghitung rute jalan sungguhan butuh Directions API
+     berbayar, yang tidak sebanding dengan kebutuhan prototipe ini. */
+  const JARAK_BUMI_KM = 6371;
+  const keRadian = d => d * Math.PI / 180;
+
+  function jarakKm(lat1, lng1, lat2, lng2) {
+    const dLat = keRadian(lat2 - lat1);
+    const dLng = keRadian(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2
+            + Math.cos(keRadian(lat1)) * Math.cos(keRadian(lat2)) * Math.sin(dLng / 2) ** 2;
+    return 2 * JARAK_BUMI_KM * Math.asin(Math.sqrt(a));
+  }
+
+  /* Titik asal jarak. null berarti GPS belum dipakai -- daftar lalu dihitung dari
+     LOKASI_ESTIMASI, dan labelnya tetap "perkiraan" supaya tidak menyesatkan. */
+  let asalLokasi = null;
+
+  function jarakKeCabang(b) {
+    const asal = asalLokasi || LOKASI_ESTIMASI;
+    return jarakKm(asal.lat, asal.lng, b.lat, b.lng);
+  }
+
+  /* Format jarak: di bawah 1 km ditulis dalam meter, karena "0.4 km" untuk
+     cabang seberang jalan jauh lebih sulit dibaca daripada "400 m". */
+  function formatJarak(km) {
+    return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+  }
+
   /* ---------- Toast ---------- */
   const toastEl = $('#toast');
   let toastTimer;
@@ -734,15 +769,25 @@
 
   function renderBranches() {
     /* Jumlah cabang dihitung dari BRANCH_DETAILS, tidak diketik di markup.
-       Diketi mati membuat kalimatnya diam begitu cabang ditambah atau
+       Ditetik mati membuat kalimatnya diam begitu cabang ditambah atau
        ditutup -- persis kesalahan yang pernah ada: tulisannya masih
        "8 studio" padahal cabangnya sudah sembilan. */
     $('#branchCount').textContent = BRANCH_DETAILS.length;
 
-    $('#branchList').innerHTML = BRANCH_DETAILS.map((b, i) => {
+    /* Diurutkan dari yang terdekat. map() sudah membuat array baru, jadi
+       BRANCH_DETAILS tidak ikut terurut -- urutan aslinya masih dipakai
+       untuk warna hero. */
+    const urut = BRANCH_DETAILS
+      .map((b, asli) => ({ b, km: jarakKeCabang(b), asli }))
+      .sort((x, y) => x.km - y.km);
+
+    $('#branchList').innerHTML = urut.map(({ b, km, asli }) => {
       const sesi = branchSessionCount(b.id);
-      // Nada hero sedikit berbeda antar cabang agar daftar tidak monoton
-      const hue = 28 + (i * 9) % 26;
+      // Nada hero dihitung dari urutan ASLI, bukan dari posisi di daftar yang
+      // sudah diurutkan. Kalau memakai posisi(sorted), setiap kali lokasi GPS
+      // berubah semua warna ikut teracak -- warna jadi bergantung pada
+      // lokasi, bukan pada cabang.
+      const hue = 28 + (asli * 9) % 26;
 
       // Foto opsional -- lihat branchArtwork di atas.
       const foto = b.cover ? `
@@ -754,7 +799,7 @@
         <article class="branch-card">
 
           <div class="branch-card__hero" style="--h:${hue}">
-            ${branchArtwork(b, i)}
+            ${branchArtwork(b, asli)}
             ${foto}
             ${b.flag ? `
               <span class="badge-flag">
@@ -775,7 +820,12 @@
                 <span class="pill__sep" aria-hidden="true">&bull;</span> ${b.hours}
               </span>
               <span class="pill pill--dark">
-                <span aria-hidden="true">➤</span> ${b.distance}
+                <svg class="pill__icon" viewBox="0 0 24 24" width="13" height="13" fill="none"
+                     stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M3.5 11.2 20 4.6l-6.6 16.4-2.4-6.4z"/>
+                </svg>
+                ${formatJarak(km)}
               </span>
             </div>
           </div>
@@ -838,6 +888,95 @@
         toast('Menampilkan jadwal ' + branchName(btn.dataset.branchJump));
       });
     });
+  }
+
+  /* ---------- Titik asal jarak ---------- */
+
+  /* Tulis ulang keterangan di bilah lokasi sesuai asal jarak yang sedang dipakai.
+     Dua keadaan itu harus selalu terlihat berbeda: jarak "perkiraan" dan jarak
+     dari GPS sama-sama tampilannya berupa angka km, jadi tanpa keterangan orang
+     tidak bisa tahu yang mana yang sebenarnya. */
+  function renderLocationBar(ditolak) {
+    const pakaiGps = asalLokasi !== null;
+
+    $('#locTitle').textContent = pakaiGps
+      ? 'Diurutkan dari lokasi kamu'
+      : 'Diurutkan dari titik perkiraan';
+    $('#locSub').textContent = pakaiGps
+      ? 'Jarak dihitung dari GPS perangkat ini'
+      : 'Bawa GPS untuk melihat jarak sebenarnya';
+    $('#locBtnText').textContent = pakaiGps ? 'Perbarui lokasi' : 'Gunakan lokasi saya';
+    $('#locBar').classList.toggle('is-ditolak', Boolean(ditolak));
+  }
+
+  /* Minta izin lokasi.
+
+     Sengaja dipanggil dari klik tombol, bukan otomatis saat halaman dimuat:
+     peramban modern menolak permintaan yang tidak berasal dari gerakan
+     pengguna, jadi auto-request hanya menghasilkan layar izin yang membingungkan
+     yang selalu dijawab "tolak".
+
+     Kegagalan bukan error yang perlu diselesaikan -- GPS bisa dinonaktifkan,
+     ditolak, tidak tersedia di HTTP, atau terlalu lama. Semuanya berakhir sama:
+     jarak tetap dihitung dari LOKASI_ESTIMASI dan ebbilangnya. */
+  function mintaLokasi() {
+    const btn = $('#locBtn');
+    const teks = $('#locBtnText');
+
+    // navigator.geolocation dicek langsung, bukan hanya dengan "in navigator",
+    // karena ada lingkungan di mana propertinya ada tapi nilainya kosong.
+    // Memanggil .getCurrentPosition di sana melempar, dan tidak ada yang
+    // mengembalikan tombol dari keadaan nonaktif -- jadi tombolnya macet
+    // selamanya.
+    if (!navigator.geolocation || typeof navigator.geolocation.getCurrentPosition !== 'function') {
+      asalLokasi = null;
+      renderLocationBar(true);
+      renderBranches();
+      toast('Perangkat ini tidak menyediakan GPS — jarak memakai titik perkiraan');
+      return;
+    }
+
+    btn.disabled = true;
+    teks.textContent = 'Meminta izin…';
+
+    try {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          asalLokasi = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          selesaiMintaLokasi(false);
+          renderBranches();
+          toast('Jarak dihitung dari lokasi kamu');
+        },
+        err => {
+          // Kembalikan ke titik perkiraan, jangan tahan posisi GPS yang lalu.
+          // Kalau tidak, labelnya masih berbunyi "lokasi kamu" sementara
+          // toast berjanji sebaliknya, dan keduanya sama-sama terlihat.
+          asalLokasi = null;
+          selesaiMintaLokasi(true);
+          renderBranches();
+          const pesan = {
+            1: 'Izin lokasi ditolak — jarak memakai titik perkiraan',
+            2: 'Lokasi tidak bisa ditemukan — jarak memakai titik perkiraan',
+            3: 'Pencarian lokasi terlalu lama — jarak memakai titik perkiraan'
+          }[err.code] || 'Lokasi tidak bisa dibaca — jarak memakai titik perkiraan';
+          toast(pesan);
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    } catch (e) {
+      asalLokasi = null;
+      selesaiMintaLokasi(true);
+      renderBranches();
+      toast('Lokasi tidak bisa dibaca — jarak memakai titik perkiraan');
+    }
+  }
+
+  /* Kembalikan tombol ke keadaan normal. Dipanggil dari kedua cabang hasil
+     dan dari blok catch, supaya tidak ada jalur yang Meninggalkan tombol
+     nonaktif. */
+  function selesaiMintaLokasi(ditolak) {
+    $('#locBtn').disabled = false;
+    renderLocationBar(ditolak);
   }
 
   /** Terapkan pilihan cabang ke pill baris atas, jam buka, dan daftar kelas. */
@@ -2312,10 +2451,16 @@
     renderCalendar();
     renderPackageCard();
     renderClasses();
+    renderLocationBar(false);
     renderBranches();
     renderPackages();
     renderHistory();
     gate();
+
+    // Tombol lokasi sengaja dipasang di sini, bukan di markup, supaya
+    // tidak ada handler yang menggantung kalau authScreen masih menutup
+    // aplikasi saat init() berjalan.
+    $('#locBtn').addEventListener('click', mintaLokasi);
   }
 
   init();

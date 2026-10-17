@@ -562,8 +562,8 @@ const BRANCH_DETAILS = [
     address: 'Jl. Kemang Selatan 11 No.77, Bangka',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Barnyard/@-6.2728203,106.8186437,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f1cc709c9e43:0xdd32d0f221f45dd2!8m2!3d-6.2728203!4d106.8186437',
     hours: '07.00 - 21.00 WIB',
+    lat: -6.2728203, lng: 106.8186437,
     phone: '+62 21 0000 0003',
-    distance: '3.5 km',
     cover: 'assets/branches/kemang.jpg',
     status: 'Aktif',
     facilities: [
@@ -579,8 +579,8 @@ const BRANCH_DETAILS = [
     address: 'Jl. Danau Sunter Utara No.9B Lt.3, Sunter',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Sunter/@-6.1383684,106.864813,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f54f6e8bb093:0xd7bb1dbca614cbe2!8m2!3d-6.1383684!4d106.864813',
     hours: '07.00 - 20.00 WIB',
+    lat: -6.1383684, lng: 106.864813,
     phone: '+62 21 0000 0006',
-    distance: '12.9 km',
     cover: 'assets/branches/sunter.jpg',
     status: 'Aktif',
     facilities: [
@@ -595,8 +595,8 @@ const BRANCH_DETAILS = [
     address: 'Jl. Rukan Sentra Niaga 3 No.6, Jaka Setia, Bekasi',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Galaxy/@-6.2751828,106.9740888,17z/data=!3m1!4b1!4m6!3m5!1s0x2e698d001feec333:0x19f204279cf1c5d6!8m2!3d-6.2751828!4d106.9740888!16s%2Fg%2F11lyjb0msz',
     hours: '06.30 – 20.30 WIB',
+    lat: -6.2751828, lng: 106.9740888,
     phone: '+62 21 0000 0007',
-    distance: '21.3 km',
     cover: 'assets/branches/bekasi.jpg',
     status: 'Aktif',
     facilities: [
@@ -612,8 +612,8 @@ const BRANCH_DETAILS = [
     address: 'Lengkong Kulon, Kec. Pagedangan, Kabupaten Tangerang',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+BSD/@-6.2889035,106.6396704,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69fb29923e4177:0x8da9d608e29e53dc!8m2!3d-6.2889035!4d106.6396704!16s%2Fg%2F11kq7v638d',
     hours: '06.30 – 21.00 WIB',
+    lat: -6.2889035, lng: 106.6396704,
     phone: '+62 21 0000 0008',
-    distance: '28.6 km',
     cover: 'assets/branches/bsd.jpg',
     status: 'Aktif',
     facilities: [
@@ -632,7 +632,7 @@ const BRANCH_DETAILS = [
     address: 'Jl. Boulevard Bintaro Jaya No.10, Sektor 7, Tangerang Selatan',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Bintaro+Studio/@-6.2738935,106.710822,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69fb22f8011c8b:0xc6f5afd3eb3c624e!8m2!3d-6.2738935!4d106.710822',
     hours: '07.00 – 17.00 WIB',
-    distance: '24.2 km',
+    lat: -6.2738935, lng: 106.710822,
     cover: 'assets/branches/bintaro.jpg',
     status: 'Aktif',
     facilities: [
@@ -657,7 +657,7 @@ const BRANCH_DETAILS = [
     address: 'Sampoerna Strategic Square, Jl. Jenderal Sudirman No.45-46',
     mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Sampoerna/@-6.216681,106.8177653,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f5001d2462e3:0x461e2c87fb67698d!8m2!3d-6.216681!4d106.8177653',
     hours: '07.30 - 20.30 WIB',
-    distance: '4.6 km',
+    lat: -6.216681, lng: 106.8177653,
     cover: 'assets/branches/sampoerna.jpg',
     status: 'Aktif',
     facilities: [
@@ -683,7 +683,7 @@ const BRANCH_DETAILS = [
     address: 'Jl. Gedung Hijau Raya No.1A, Pd. Pinang',
     mapsUrl: 'https://www.google.com/maps/place/The+Slow+Pondok+Indah/@-6.276809,106.776604,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f156bc852c3d:0xb6e78b0a32ec7e77!8m2!3d-6.276809!4d106.776604',
     hours: '07.00 - 20.00 WIB',
-    distance: '8.4 km',
+    lat: -6.276809, lng: 106.776604,
     cover: 'assets/branches/pondok-indah.jpg',
     status: 'Aktif',
     facilities: [
@@ -693,6 +693,22 @@ const BRANCH_DETAILS = [
     ]
   }
 ];
+
+/* Titik asal untuk menghitung jarak ketika lokasi pengguna tidak tersedia.
+
+   Tiap cabang sudah punya lat/lng sendiri, diambil persis dari mapsUrl di atas.
+   Jaraknya dulu ditulis mati ("3.5 km", "28.6 km") dan tidak ada kodenya yang
+   menghitung apa pun; sekarang dihitung dengan haversine.
+
+   Nilai di bawah dipakai kalau GPS ditolak, tidak ada, atau gagal. Letaknya di
+   tengah-tengah sebaran cabang, jadi urutannya masih masuk akal. Ganti kalau
+   ada titik asal yang lebih tepat -- satu baris saja, dan semua yang lain ikut
+   menyesuaikan. */
+const LOKASI_ESTIMASI = {
+  lat: -6.2909,
+  lng: 106.6603,
+  nama: 'perkiraan'
+};
 
 const PAYMENT_METHODS = [
   { id: 'qris',  label: 'QRIS',            logo: '▦', desc: 'Scan QR di kasir' },

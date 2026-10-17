@@ -1174,6 +1174,47 @@ a { color: var(--green-700); }
 .btn__icon svg { display: block; width: 15px; height: 15px; }
 
 /* ---------- 9b. Kartu cabang ---------- */
+
+/* Bilah titik asal jarak. Menyatakan dari mana jarak dihitung, karena angka
+   yang tampil berubah-ubah antara "perkiraan" dan lokasi sebenarnya --
+   tanpa keterangan, keduanya terlihat sama sahnya. */
+.locbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: var(--r-md);
+}
+.locbar__text { flex: 1; min-width: 0; }
+.locbar__title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-800);
+}
+.locbar__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-400);
+}
+/* Tombolnya tidak ikut melebar: labelnya bisa diganti jadi "Meminta izin..."
+   saat GPS dipanggil, dan baris ini harus tetap muat di 512px. */
+.locbar__btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.locbar.is-ditolak { background: var(--cream-200); border-color: var(--line); }
+.locbar.is-ditolak .locbar__title { color: var(--ink-600); }
+
 .branch-list { display: grid; gap: 14px; }
 
 .branch-card {

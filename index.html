@@ -263,6 +263,27 @@
       </div>
     </div>
 
+    <!-- Titik asal jarak. Berubah dari "perkiraan" ke "lokasi kamu" setelah GPS
+         menyetujui; daftar cabang ikut diurutkan ulang dari yang terdekat. -->
+    <div class="locbar" id="locBar">
+      <div class="locbar__text">
+        <strong class="locbar__title" id="locTitle">Diurutkan dari titik perkiraan</strong>
+        <span class="locbar__sub" id="locSub">Bawa GPS untuk melihat jarak sebenarnya</span>
+      </div>
+      <button class="btn btn--ghost locbar__btn" type="button" id="locBtn">
+        <span class="btn__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+               focusable="false">
+            <circle cx="12" cy="12" r="3.2"/>
+            <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3"/>
+            <circle cx="12" cy="12" r="8"/>
+          </svg>
+        </span>
+        <span id="locBtnText">Gunakan lokasi saya</span>
+      </button>
+    </div>
+
     <div class="branch-list" id="branchList"></div>
   </main>
 
