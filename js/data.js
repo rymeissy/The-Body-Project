@@ -700,13 +700,17 @@ const BRANCH_DETAILS = [
    Jaraknya dulu ditulis mati ("3.5 km", "28.6 km") dan tidak ada kodenya yang
    menghitung apa pun; sekarang dihitung dengan haversine.
 
-   Nilai di bawah dipakai kalau GPS ditolak, tidak ada, atau gagal. Letaknya di
-   tengah-tengah sebaran cabang, jadi urutannya masih masuk akal. Ganti kalau
-   ada titik asal yang lebih tepat -- satu baris saja, dan semua yang lain ikut
-   menyesuaikan. */
+   Titik di bawah dipakai kalau GPS ditolak, tidak ada, atau gagal. Grand
+   Indonesia dipilih karena posisinya di tengah sebaran cabang -- ada yang di
+   utara (Sunter), barat (BSD, Bintaro), dan timur (Bekasi) -- sehingga urutan
+   yang muncul masih masuk akal untuk prospective yang sedang melihat-lihat.
+
+   Koordinatnya pembulatan, bukan hasil pengukuran GPS, karena memang cuma
+   titik acuan. Ganti kalau ada titik asal yang lebih tepat: satu baris saja,
+   dan semua yang lain ikut menyesuaikan. */
 const LOKASI_ESTIMASI = {
-  lat: -6.2909,
-  lng: 106.6603,
+  lat: -6.1956,
+  lng: 106.8208,
   nama: 'perkiraan'
 };
 
