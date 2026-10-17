@@ -711,7 +711,8 @@ const BRANCH_DETAILS = [
 const LOKASI_ESTIMASI = {
   lat: -6.1956,
   lng: 106.8208,
-  nama: 'perkiraan'
+  nama: 'perkiraan',
+  tempat: 'Grand Indonesia'
 };
 
 const PAYMENT_METHODS = [

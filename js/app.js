@@ -892,65 +892,39 @@
 
   /* ---------- Titik asal jarak ---------- */
 
-  /* Petunjuk untuk keadaan yang tidak bisa dipulihkan dengan satu klik.
+  /* Keterangan singkat untuk bilah lokasi.
 
-     Yang penting di sini: begitu izin dijawab "Never allow", peramban tidak
-     akan menampilkan layar izin lagi, dan kode mana pun tidak bisa
-     memunculkannya -- getCurrentPosition langsung gagal dalam hitungan
-     milidetik. Jadi satu-satunya jalan keluar adalah memberi tahu cara
-     membukanya lewat pengaturan situs.
+     Ditulis sebagai kalimat pendek, bukan penjelasan. Pertanyaan orang yang
+     membaca kartu "2.4 km" adalah "berapa jauh dari saya?", jadi jawabannya
+     langsung berupa tempat: bukan "diurutkan dari titik perkiraan" yang
+     menjawab pertanyaan lain, dan bukan "bawa GPS" -- orang tidak membawa GPS
+     ke sebuah situs.
 
-     Ditulis di bilah, bukan di toast, karena toast hilang dalam tiga detik
-     sedangkan petunjuk ini perlu dibaca pelan-pelan. */
-  const PETUNJUK_BLOKIR =
-    'Izin lokasi diblokir untuk situs ini. Buka ikon kunci di sebelah kiri alamat, '
-    + 'pilih Pengaturan situs, ubah Lokasi jadi Izin, lalu muat ulang halaman.';
+     Petunjuk cara memperbaikinya tidak di sini, melainkan di toast yang muncul
+     tepat saat kegagalan terjadi. Tombolnya selalu ada, jadi menekan lagi akan
+     menampilkan petunjuknya lagi. */
+  const KETERANGAN_LOKASI = {
+    gps:     'Diukur dari GPS perangkat ini',
+    default: 'Lokasi belum aktif',
+    ditolak: 'Izin lokasi belum diberikan',
+    blokir:  'Izin diblokir di pengaturan situs',
+    alamat:  'Lokasi hanya aktif di alamat HTTPS',
+    sumber:  'Lokasi tidak ditemukan'
+  };
 
-  const PETUNJUK_DITOLAK =
-    'Izin lokasi ditolak. Buka ikon kunci di sebelah kiri alamat, pilih Pengaturan '
-    + 'situs, ubah Lokasi jadi Izin, lalu muat ulang halaman.';
+  function renderLocationBar(keadaan) {
+    const dariGps = asalLokasi !== null;
 
-  const PETUNJUK_TIDAK_ADA_SUMBER =
-    'Tidak ada titik lokasi dari perangkat ini. Jarak memakai titik perkiraan. '
-    + 'Periksa layanan lokasi di pengaturan sistem perangkat.';
+    $('#locTitle').textContent = dariGps
+      ? 'Jarak dari lokasi kamu'
+      : 'Jarak dari ' + LOKASI_ESTIMASI.tempat;
 
-  /* Alamat yang dibuka lewat HTTP biasa tidak termasuk "secure context", dan
-     geolocation diblokir total di sana: layar izin tidak akan muncul sama
-     sekali, dan navigator.permissions melaporkan "denied" walau tidak ada yang
-     memblokir apa pun.
+    $('#locSub').textContent = dariGps
+      ? KETERANGAN_LOKASI.gps
+      : (KETERANGAN_LOKASI[keadaan] || KETERANGAN_LOKASI.default);
 
-     Yang termasuk aman hanya HTTPS, dan http://localhost atau 127.0.0.1.
-     Alamat IP jaringan -- http://192.168.0.5:4173 -- tidak termasuk, dan itu
-     justru yang dipakai saat aplikasi dibuka dari ponsel.
-
-     Tanpa pemeriksaan ini, aplikasi menyalahkan izin yang sebenarnya tidak
-     pernah ditolak, dan mengarahkan orang mengubah pengaturan situs yang
-     tidak akan menolong apa pun. */
-  const PETUNJUK_TIDAK_RAHASI =
-    'Browser hanya mengizinkan pembacaan lokasi di alamat HTTPS atau localhost. '
-    + 'Halaman ini dibuka lewat alamat lain, jadi lokasi tidak bisa dibaca sama sekali — '
-    + 'bukan karena izin ditolak. Jarak memakai titik perkiraan.';
-
-  /* Tulis ulang keterangan di bilah lokasi sesuai asal jarak yang sedang dipakai.
-     Dua keadaan itu harus selalu terlihat berbeda: jarak "perkiraan" dan jarak
-     dari GPS sama-sama tampilannya berupa angka km, jadi tanpa keterangan orang
-     tidak bisa tahu yang mana yang sebenarnya.
-
-     "pesan" dipakai untuk hal yang bisa dilakukan pengguna; kalau kosong, yang
-     tampil adalah keterangan biasa. */
-  function renderLocationBar(ditolak, pesan) {
-    const pakaiGps = asalLokasi !== null;
-
-    $('#locTitle').textContent = pakaiGps
-      ? 'Diurutkan dari lokasi kamu'
-      : 'Diurutkan dari titik perkiraan';
-
-    $('#locSub').textContent = pesan || (pakaiGps
-      ? 'Jarak dihitung dari GPS perangkat ini'
-      : 'Bawa GPS untuk melihat jarak sebenarnya');
-
-    $('#locBtnText').textContent = pakaiGps ? 'Perbarui lokasi' : 'Gunakan lokasi saya';
-    $('#locBar').classList.toggle('is-ditolak', Boolean(ditolak));
+    $('#locBtnText').textContent = dariGps ? 'Perbarui lokasi' : 'Gunakan lokasi saya';
+    $('#locBar').classList.toggle('is-ditolak', Boolean(keadaan) && !dariGps);
   }
 
   /* Status izin lokasi, satu-satunya bagian dari proses ini yang bisa dibaca
@@ -994,8 +968,9 @@
     // pengaturan situs, padahal kusinyanya ada di tempat lain: di alamatnya.
     if (!window.isSecureContext) {
       asalLokasi = null;
-      selesaiMintaLokasi(true, PETUNJUK_TIDAK_RAHASI);
+      selesaiMintaLokasi('alamat');
       renderBranches();
+      toast('Lokasi hanya bisa dibaca di alamat HTTPS atau localhost');
       return;
     }
 
@@ -1010,8 +985,9 @@
     // selamanya.
     if (!navigator.geolocation || typeof navigator.geolocation.getCurrentPosition !== 'function') {
       asalLokasi = null;
-      selesaiMintaLokasi(true, PETUNJUK_TIDAK_ADA_SUMBER);
+      selesaiMintaLokasi('sumber');
       renderBranches();
+      toast('Perangkat ini tidak punya layanan lokasi');
       return;
     }
 
@@ -1022,9 +998,9 @@
     const izin = await statusIzinLokasi();
     if (izin === 'denied') {
       asalLokasi = null;
-      selesaiMintaLokasi(true, PETUNJUK_BLOKIR);
+      selesaiMintaLokasi('blokir');
       renderBranches();
-      toast('Izin lokasi diblokir untuk situs ini');
+      toast('Izin lokasi diblokir. Buka pengaturan situs untuk mengizinkannya.');
       return;
     }
 
@@ -1032,7 +1008,7 @@
       navigator.geolocation.getCurrentPosition(
         pos => {
           asalLokasi = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-          selesaiMintaLokasi(false);
+          selesaiMintaLokasi('gps');
           renderBranches();
           toast('Jarak dihitung dari lokasi kamu');
         },
@@ -1046,11 +1022,7 @@
           // situs. Code 3 berarti izin sudah diberikan tapi tidak ada penyedia
           // lokasi yang menjawab -- sering terjadi di mesin virtual atau sesi
           // jarak jauh, dan cara memperbaikinya ada di pengaturan sistem.
-          const petunjuk = err.code === 1 ? PETUNJUK_DITOLAK
-            : err.code === 3 ? PETUNJUK_TIDAK_ADA_SUMBER
-            : null;
-
-          selesaiMintaLokasi(true, petunjuk);
+          selesaiMintaLokasi(err.code === 1 ? 'ditolak' : 'sumber');
           renderBranches();
           toast(pesanGagalLokasi(err.code));
         },
@@ -1068,28 +1040,28 @@
       );
     } catch (e) {
       asalLokasi = null;
-      selesaiMintaLokasi(true);
+      selesaiMintaLokasi('sumber');
       renderBranches();
-      toast(pesanGagalLokasi());
+      toast('Lokasi tidak bisa dibaca');
     }
   }
 
-  /* Toast dibaca sekilas lalu hilang, jadi cukup menyebut gejalanya. Petunjuk
-     lengkapnya ada di bilah, yang tetap terbaca. */
+  /* Toast muncul tepat saat orang menekan tombol, jadi di sinilah tempatnya
+     untuk menjelaskan cara memperbaikinya -- bukan di bilah, yang isinya cuma
+     menyatakan keadaan. Menombak lagi akan menampilkan ulang pesan ini. */
   function pesanGagalLokasi(kode) {
-    const suffix = ' — jarak memakai titik perkiraan';
     return {
-      1: 'Izin lokasi ditolak' + suffix,
-      2: 'Tidak ada titik lokasi dari perangkat' + suffix,
-      3: 'Gagal dapat titik lokasi' + suffix
-    }[kode] || 'Lokasi tidak bisa dibaca' + suffix;
+      1: 'Izin lokasi ditolak. Buka pengaturan situs untuk mengizinkannya.',
+      2: 'Lokasi tidak ditemukan. Cek layanan lokasi di pengaturan perangkat.',
+      3: 'Lokasi tidak ditemukan. Cek layanan lokasi di pengaturan perangkat.'
+    }[kode] || 'Lokasi tidak bisa dibaca.';
   }
 
   /* Kembalikan tombol ke keadaan normal. Dipanggil dari semua cabang hasil dan
      dari blok catch, supaya tidak ada jalur yang meninggalkan tombol nonaktif. */
-  function selesaiMintaLokasi(ditolak, pesan) {
+  function selesaiMintaLokasi(keadaan) {
     $('#locBtn').disabled = false;
-    renderLocationBar(ditolak, pesan);
+    renderLocationBar(keadaan);
   }
 
   /** Terapkan pilihan cabang ke pill baris atas, jam buka, dan daftar kelas. */
@@ -2564,7 +2536,7 @@
     renderCalendar();
     renderPackageCard();
     renderClasses();
-    renderLocationBar(false);
+    renderLocationBar();
     renderBranches();
     renderPackages();
     renderHistory();
