@@ -914,6 +914,23 @@
     'Tidak ada titik lokasi dari perangkat ini. Jarak memakai titik perkiraan. '
     + 'Periksa layanan lokasi di pengaturan sistem perangkat.';
 
+  /* Alamat yang dibuka lewat HTTP biasa tidak termasuk "secure context", dan
+     geolocation diblokir total di sana: layar izin tidak akan muncul sama
+     sekali, dan navigator.permissions melaporkan "denied" walau tidak ada yang
+     memblokir apa pun.
+
+     Yang termasuk aman hanya HTTPS, dan http://localhost atau 127.0.0.1.
+     Alamat IP jaringan -- http://192.168.0.5:4173 -- tidak termasuk, dan itu
+     justru yang dipakai saat aplikasi dibuka dari ponsel.
+
+     Tanpa pemeriksaan ini, aplikasi menyalahkan izin yang sebenarnya tidak
+     pernah ditolak, dan mengarahkan orang mengubah pengaturan situs yang
+     tidak akan menolong apa pun. */
+  const PETUNJUK_TIDAK_RAHASI =
+    'Browser hanya mengizinkan pembacaan lokasi di alamat HTTPS atau localhost. '
+    + 'Halaman ini dibuka lewat alamat lain, jadi lokasi tidak bisa dibaca sama sekali — '
+    + 'bukan karena izin ditolak. Jarak memakai titik perkiraan.';
+
   /* Tulis ulang keterangan di bilah lokasi sesuai asal jarak yang sedang dipakai.
      Dua keadaan itu harus selalu terlihat berbeda: jarak "perkiraan" dan jarak
      dari GPS sama-sama tampilannya berupa angka km, jadi tanpa keterangan orang
@@ -970,6 +987,17 @@
 
     btn.disabled = true;
     teks.textContent = 'Mencari lokasi…';
+
+    // Cek secure context lebih dulu, sebelum status izin. Di alamat yang tidak
+    // aman, navigator.permissions melaporkan "denied" walau tidak ada yang
+    // memblokir -- jadi tanpa pemeriksaan ini pesan yang muncul mengarah ke
+    // pengaturan situs, padahal kusinyanya ada di tempat lain: di alamatnya.
+    if (!window.isSecureContext) {
+      asalLokasi = null;
+      selesaiMintaLokasi(true, PETUNJUK_TIDAK_RAHASI);
+      renderBranches();
+      return;
+    }
 
     // Kasih tahu pengguna apa yang sedang ditunggu. Pencarian di desktop
     // bisa memakan 25 detik, dan tanpa keterangan tombol yang diam itu
