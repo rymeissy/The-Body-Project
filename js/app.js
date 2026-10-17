@@ -21,11 +21,18 @@
   };
 
   /* ---------- State ---------- */
-  // Hari yang dibuka dan bulan date picker ikut tanggal sistem, bukan tanggal
-  // mati. Menulisnya mati membuat halaman terbuka di tanggal lama begitu
-  // aplikasi dipakai esok hari.
-  const HARI_INI = toKey(new Date());
-  const BULAN_INI = new Date().getMonth();
+  /* "Hari ini" dibaca satu kali saja, dari CAL_TODAY di data.js.
+     Sebelumnya app.js punya hitungan sendiri -- toKey(new Date()) untuk
+     HARI_INI dan new Date().getMonth() untuk BULAN_INI -- sementara
+     data.js punya CAL_TODAY yang isinya sama persis. Semuanya memanggil jam
+     sistem, jadi hasilnya selalu sama dan tidak pernah salah. Masalahnya
+     hanya kalau di kemudian hari ada yang mengubah salah satu dan lupa
+     yang lain: tanggal di bagian berbeda-bagian halaman bisa lalu tidak
+     cocok. Menyatukannya ke CAL_TODAY menutup celah itu tanpa mengubah
+     perilaku apa pun. */
+  const HARI_INI = CAL_TODAY;
+  const BULAN_INI = toDate(HARI_INI).getMonth();
+  const TAHUN_INI = toDate(HARI_INI).getFullYear();
 
   // Halaman yang terakhir dibuka disimpan supaya refresh tidak memundulkan
   // pengguna ke Jadwal. switchView() menulisnya setiap kali tab diganti.
@@ -54,7 +61,7 @@
     search: '',
 
     // Bulan yang ditinjau pada date picker
-    pickerYear: new Date().getFullYear(),
+    pickerYear: TAHUN_INI,
     pickerMonth: BULAN_INI,
 
     // Alur pemesanan
@@ -729,6 +736,12 @@
   }
 
   function renderBranches() {
+    /* Jumlah cabang dihitung dari BRANCH_DETAILS, tidak diketik di markup.
+       Diketi mati membuat kalimatnya diam begitu cabang ditambah atau
+       ditutup -- persis kesalahan yang pernah ada: tulisannya masih
+       "8 studio" padahal cabangnya sudah sembilan. */
+    $('#branchCount').textContent = BRANCH_DETAILS.length;
+
     $('#branchList').innerHTML = BRANCH_DETAILS.map((b, i) => {
       const sesi = branchSessionCount(b.id);
       // Nada hero sedikit berbeda antar cabang agar daftar tidak monoton
