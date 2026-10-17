@@ -264,28 +264,60 @@
     </div>
 
     <!-- Titik asal jarak. Berubah dari "perkiraan" ke "lokasi kamu" setelah GPS
-         menyetujui; daftar cabang ikut diurutkan ulang dari yang terdekat. -->
+         menyetujui, atau ke wilayah yang dipilih manual. -->
     <div class="locbar" id="locBar">
       <div class="locbar__text">
         <strong class="locbar__title" id="locTitle">Diurutkan dari titik perkiraan</strong>
         <span class="locbar__sub" id="locSub">Bawa GPS untuk melihat jarak sebenarnya</span>
       </div>
-      <button class="btn btn--ghost locbar__btn" type="button" id="locBtn">
-        <span class="btn__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
-               focusable="false">
-            <circle cx="12" cy="12" r="3.2"/>
-            <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3"/>
-            <circle cx="12" cy="12" r="8"/>
-          </svg>
-        </span>
-        <span id="locBtnText">Gunakan lokasi saya</span>
-      </button>
+      <div class="locbar__actions">
+        <button class="btn btn--ghost locbar__btn" type="button" id="locBtn">
+          <span class="btn__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                 stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+                 focusable="false">
+              <circle cx="12" cy="12" r="3.2"/>
+              <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3"/>
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+          </span>
+          <span id="locBtnText">Gunakan lokasi saya</span>
+        </button>
+        <button class="btn btn--ghost locbar__btn" type="button" id="areaBtn">
+          <span class="btn__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+                 stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+                 focusable="false">
+              <path d="M12 21.5s7-6.1 7-11.1a7 7 0 1 0-14 0c0 5 7 11.1 7 11.1Z"/>
+              <circle cx="12" cy="10" r="2.6"/>
+            </svg>
+          </span>
+          <span>Pilih area</span>
+        </button>
+      </div>
     </div>
 
     <div class="branch-list" id="branchList"></div>
   </main>
+
+  <!-- Pilih titik asal jarak tanpa GPS. -->
+  <section class="sheet" id="areaSheet" role="dialog" aria-modal="true"
+           aria-labelledby="areaSheetTitle" hidden>
+    <div class="sheet__grip"></div>
+
+    <div class="sheet__head">
+      <h2 id="areaSheetTitle">Pilih Area</h2>
+      <p>Jarak akan dihitung dari titik pusat area yang dipilih.</p>
+    </div>
+
+    <div class="sheet__body">
+      <div class="area-list" id="areaList"></div>
+    </div>
+
+    <div class="sheet__foot">
+      <button class="btn btn--block" type="button" data-area-act="batal">Batal</button>
+    </div>
+  </section>
 
   <!-- ===================== VIEW: PAKET ===================== -->
   <main class="view" id="view-package">

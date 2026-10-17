@@ -1180,15 +1180,18 @@ a { color: var(--green-700); }
    tanpa keterangan, keduanya terlihat sama sahnya. */
 .locbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 14px;
   padding: 12px 14px;
   background: var(--green-50);
   border: 1px solid var(--green-200);
   border-radius: var(--r-md);
 }
-.locbar__text { flex: 1; min-width: 0; }
+/* Teks ambil baris penuh sendiri supaya dua tombol di bawahnya tidak saling
+   squeezing di kolom 512px. */
+.locbar__text { flex: 1 1 100%; min-width: 0; }
 .locbar__title {
   display: block;
   font-size: 13px;
@@ -1200,20 +1203,56 @@ a { color: var(--green-700); }
   margin-top: 2px;
   font-size: 11px;
   color: var(--ink-400);
+  line-height: 1.5;
 }
-/* Tombolnya tidak ikut melebar: labelnya bisa diganti jadi "Meminta izin..."
+.locbar__actions { flex: 1 1 100%; display: flex; gap: 8px; }
+/* Tombolnya tidak ikut melebar: labelnya bisa diganti jadi "Mencari lokasi..."
    saat GPS dipanggil, dan baris ini harus tetap muat di 512px. */
 .locbar__btn {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  padding: 9px 12px;
+  padding: 9px 10px;
   font-size: 12px;
   white-space: nowrap;
 }
+.locbar__btn span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .locbar.is-ditolak { background: var(--cream-200); border-color: var(--line); }
 .locbar.is-ditolak .locbar__title { color: var(--ink-600); }
+
+/* Daftar pilihan area. Tombol penuh, bukan baris .kv, karena yang ditekuk
+   adalah nama area -- bukan pasangan label dan nilai. */
+.area-list { display: grid; gap: 8px; }
+.area-opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink-900);
+  text-align: left;
+  cursor: pointer;
+}
+.area-opt:active { transform: scale(.99); }
+.area-opt__dot {
+  flex: 0 0 auto;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+}
+.area-opt__nama { flex: 1; min-width: 0; font-weight: 500; }
+.area-opt__jarak { flex: 0 0 auto; font-size: 12px; color: var(--ink-400); }
+.area-opt.is-aktif { border-color: var(--green-600); background: var(--green-50); }
+.area-opt.is-aktif .area-opt__dot { background: var(--green-600); border-color: var(--green-600); }
+.area-opt.is-aktif .area-opt__jarak { color: var(--green-700); font-weight: 600; }
 
 .branch-list { display: grid; gap: 14px; }
 

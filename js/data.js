@@ -714,6 +714,31 @@ const LOKASI_ESTIMASI = {
   nama: 'perkiraan'
 };
 
+/* Pilihan wilayah Jabodetabek, untuk orang yang tidak bisa atau tidak mau
+   memberi izin lokasi.
+
+   Bukan tambahan yang tidak penting. Geolocation tidak selalu bisa dipakai:
+   dibuka lewat alamat IP jaringan atau HTTP biasa, diblokir oleh pengaturan
+   peramban, ditolak, atau -- seperti pada komputer tanpa cip GPS -- tidak ada
+   penyedia lokasi yang menjawab sama sekali. Tanpa pilihan ini, fitur jarak
+   hanya bisa didemokan di satu jenis lingkungan saja.
+
+   Koordinat masing-masing adalah titik pusat wilayah, sama seperti
+   LOKASI_ESTIMASI: acuan kasar yang cukup untuk membandingkan jarak ke tujuh
+   cabang, bukan hasil pengukuran. Branch Sunter dan Bekasi memakai titik yang
+   persis sama dengan cabangnya, jadi jaraknya ke sana akan terbaca "0 m". */
+const DAFTAR_WILAYAH = [
+  { id: 'pusat',  nama: 'Jakarta Pusat', lat: -6.1751, lng: 106.8650 },
+  { id: 'utara',  nama: 'Jakarta Utara', lat: -6.1384, lng: 106.8648 },
+  { id: 'timur',  nama: 'Jakarta Timur', lat: -6.2088, lng: 106.8824 },
+  { id: 'selatan',nama: 'Jakarta Selatan',lat: -6.2615, lng: 106.8107 },
+  { id: 'barat',  nama: 'Jakarta Barat', lat: -6.1683, lng: 106.8000 },
+  { id: 'bekasi', nama: 'Bekasi',        lat: -6.2752, lng: 106.9741 },
+  { id: 'depok',  nama: 'Depok',         lat: -6.4025, lng: 106.7942 },
+  { id: 'tangerang', nama: 'Tangerang',  lat: -6.1783, lng: 106.6319 },
+  { id: 'bogor',  nama: 'Bogor',         lat: -6.5950, lng: 106.8166 }
+];
+
 const PAYMENT_METHODS = [
   { id: 'qris',  label: 'QRIS',            logo: '▦', desc: 'Scan QR di kasir' },
   { id: 'bca',   label: 'BCA Virtual Acct', logo: '◫', desc: 'Transfer bank' },

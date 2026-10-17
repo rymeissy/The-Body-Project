@@ -97,9 +97,14 @@
     return 2 * JARAK_BUMI_KM * Math.asin(Math.sqrt(a));
   }
 
-  /* Titik asal jarak. null berarti GPS belum dipakai -- daftar lalu dihitung dari
-     LOKASI_ESTIMASI, dan labelnya tetap "perkiraan" supaya tidak menyesatkan. */
-  let asalLokasi = null;
+  /* Titik asal jarak, beserta sumbernya: 'gps' (dari GPS), 'wilayah'
+     manual), atau null (belum ada -- dihitung dari LOKASI_ESTIMASI).
+
+     Sumbernya wajib disimpan, bukan cuma lat/lng, karena ketiganya menghasilkan
+     angka yang tampilannya sama-sama berupa "km" tapi tingkat keyakinannya
+     berbeda. Tanpa ini, jarak perkiraan akan terlihat sama sahnya dengan jarak
+     yang benar-benar diukur. */
+  let asalLokasi = null;      // { lat, lng, sumber, nama }
 
   function jarakKeCabang(b) {
     const asal = asalLokasi || LOKASI_ESTIMASI;
@@ -939,17 +944,25 @@
      "pesan" dipakai untuk hal yang bisa dilakukan pengguna; kalau kosong, yang
      tampil adalah keterangan biasa. */
   function renderLocationBar(ditolak, pesan) {
-    const pakaiGps = asalLokasi !== null;
+    const sumber = asalLokasi ? asalLokasi.sumber : null;
 
-    $('#locTitle').textContent = pakaiGps
-      ? 'Diurutkan dari lokasi kamu'
-      : 'Diurutkan dari titik perkiraan';
+    // Tiga keadaan harus selalu terbaca berbeda. Semuanya menampilkan angka km
+    // yang terlihat sama, jadi tanpa keterangan yang jelas orang tidak bisa tahu
+    // mana yang diukur dan mana yang ditebak.
+    if (sumber === 'gps') {
+      $('#locTitle').textContent = 'Diurutkan dari lokasi kamu';
+      $('#locSub').textContent = 'Jarak dihitung dari GPS perangkat ini';
+    } else if (sumber === 'wilayah') {
+      $('#locTitle').textContent = 'Diurutkan dari ' + asalLokasi.nama;
+      $('#locSub').textContent = 'Jarak dihitung dari titik pusat ' + asalLokasi.nama;
+    } else {
+      $('#locTitle').textContent = 'Diurutkan dari titik perkiraan';
+      $('#locSub').textContent = 'Bawa GPS untuk melihat jarak sebenarnya';
+    }
 
-    $('#locSub').textContent = pesan || (pakaiGps
-      ? 'Jarak dihitung dari GPS perangkat ini'
-      : 'Bawa GPS untuk melihat jarak sebenarnya');
+    if (pesan) $('#locSub').textContent = pesan;
 
-    $('#locBtnText').textContent = pakaiGps ? 'Perbarui lokasi' : 'Gunakan lokasi saya';
+    $('#locBtnText').textContent = sumber === 'gps' ? 'Perbarui lokasi' : 'Gunakan lokasi saya';
     $('#locBar').classList.toggle('is-ditolak', Boolean(ditolak));
   }
 
@@ -1031,7 +1044,12 @@
     try {
       navigator.geolocation.getCurrentPosition(
         pos => {
-          asalLokasi = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          asalLokasi = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            sumber: 'gps',
+            nama: 'lokasi kamu'
+          };
           selesaiMintaLokasi(false);
           renderBranches();
           toast('Jarak dihitung dari lokasi kamu');
@@ -1090,6 +1108,54 @@
   function selesaiMintaLokasi(ditolak, pesan) {
     $('#locBtn').disabled = false;
     renderLocationBar(ditolak, pesan);
+  }
+
+  /* ---------- Pilih area, tanpa GPS ---------- */
+
+  const areaSheet = $('#areaSheet');
+
+  /* Jarak dari tiap wilayah ke cabang terdekat, ditampilkan di sebelah kanan
+     nama. Tanpa angka itu daftar ini cuma nama-nama tanpa konteks -- dan
+     tujuannya justru supaya orang bisa membandingkan, jadi angka sudah harus
+     ada sejak awal. */
+  function renderAreaList() {
+    const asal = asalLokasi && asalLokasi.sumber === 'wilayah' ? asalLokasi.nama : null;
+
+    $('#areaList').innerHTML = DAFTAR_WILAYAH.map(w => {
+      const terdekat = Math.min(...BRANCH_DETAILS.map(b => jarakKm(w.lat, w.lng, b.lat, b.lng)));
+      return `
+        <button class="area-opt${w.nama === asal ? ' is-aktif' : ''}" type="button"
+                data-area="${w.id}">
+          <span class="area-opt__dot" aria-hidden="true"></span>
+          <span class="area-opt__nama">${w.nama}</span>
+          <span class="area-opt__jarak">${formatJarak(terdekat)}</span>
+        </button>`;
+    }).join('');
+
+    $$('#areaList [data-area]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const w = DAFTAR_WILAYAH.find(x => x.id === btn.dataset.area);
+        if (!w) return;
+        asalLokasi = { lat: w.lat, lng: w.lng, sumber: 'wilayah', nama: w.nama };
+        closeAreaSheet();
+        renderLocationBar(false);
+        renderBranches();
+        toast('Jarak dihitung dari ' + w.nama);
+      });
+    });
+  }
+
+  function openAreaSheet() {
+    renderAreaList();
+    areaSheet.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => areaSheet.classList.add('is-open'));
+  }
+
+  function closeAreaSheet() {
+    areaSheet.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(() => { areaSheet.hidden = true; }, 280);
   }
 
   /** Terapkan pilihan cabang ke pill baris atas, jam buka, dan daftar kelas. */
@@ -1280,6 +1346,7 @@
   function closeAnySheet() {
     if (sheet.classList.contains('is-open'))      { closeSheet();      return; }
     if (topupSheet.classList.contains('is-open')) { closeTopUpSheet(); return; }
+    if (areaSheet.classList.contains('is-open'))  { closeAreaSheet();  return; }
   }
 
   backdrop.addEventListener('click', closeAnySheet);
@@ -2574,6 +2641,10 @@
     // tidak ada handler yang menggantung kalau authScreen masih menutup
     // aplikasi saat init() berjalan.
     $('#locBtn').addEventListener('click', mintaLokasi);
+    $('#areaBtn').addEventListener('click', openAreaSheet);
+    $$('#areaSheet [data-area-act="batal"]').forEach(btn => {
+      btn.addEventListener('click', closeAreaSheet);
+    });
   }
 
   init();
