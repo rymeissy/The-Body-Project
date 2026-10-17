@@ -196,7 +196,7 @@
 
     // Kartu paket memuat data pribadi — sisa sesi milik orang itu sendiri.
     // Belum masuk, tidak ada yang perlu ditampilkan.
-    if (!isSignedIn()) {
+    if (isGuest()) {
       card.hidden = true;
       card.innerHTML = '';
       return;
@@ -900,6 +900,28 @@
      RENDER VIEW: RIWAYAT
      ====================================================================== */
   function renderHistory() {
+    // Riwayat milik orang yang sedang masuk. Tamu belum punya riwayat — bukan
+    // berarti belum pernah memesan, tapi berarti belum boleh melihat catatan
+    // siapa pun. Karena itu untuk tamu ditampilkan halaman kosong, bukan data
+    // milik pengguna lain.
+    //
+    // "Belum ada riwayat" memang bisa disalahbaca sebagai "kamu belum pernah
+    // memesan". Itu tidak sepenuhnya jujur untuk tamu, dan disepakati begitu:
+    // poin masuk login ada di halaman Profil, jadi tidak perlu tombol login
+    // besar di sini yang mengulang hal yang sama.
+    if (isGuest()) {
+      $('#historyList').innerHTML =
+        '<div class="empty"><p>Belum ada riwayat</p></div>';
+      $('#historyCount').hidden = true;
+      const sub = $('#historySummary');
+      if (sub) sub.hidden = true;
+      return;
+    }
+
+    $('#historyCount').hidden = false;
+    const ringkas = $('#historySummary');
+    if (ringkas) ringkas.hidden = false;
+
     $('#historyList').innerHTML = HISTORY.map(h => {
       const tone = h.sideType === 'void'
         ? 'style="color:var(--red-700);"'
@@ -1706,6 +1728,21 @@
     return Boolean(user && user.name && user.nameConfirmed);
   }
 
+  /* Mode demo (?demo=1) sengaja membiarkan localStorage kosong supaya tidak
+     ikut memakai jawaban OTP sungguhan. Jadi "belum masuk" di sini berarti
+     belum masuk DAN bukan mode demo -- karena mode demo justru harus
+     menampilkan keadaan seperti pengguna yang sudah masuk, supaya pratinjau
+     tidak menampilkan halaman kosong yang tidak akan pernah dilihat pengguna
+     asli.
+
+     Pembeda ini dipakai di tiga tempat: kartu paket, daftar riwayat, dan wajah
+     halaman profil. Kalau salah satunya masih memakai isSignedIn() saja,
+     pratinjau dan tampilan sebenarnya berbeda untuk tiga halaman itu. */
+  function isGuest() {
+    if (new URLSearchParams(location.search).get('demo') === '1') return false;
+    return !isSignedIn();
+  }
+
   /* Sudah punya token tapi nama belum diisi. Ini kondisi antara "belum masuk"
      dan "sudah masuk": akunnya ada, tinggal minta nama. Jangan dipaksa
      mengulang OTP. */
@@ -1749,8 +1786,20 @@
       $('#fullName').value = '';
       setAuthForm('name');
     } else {
-      authScreen.hidden = false;
-      appShell.hidden = true;
+      // Tamu. Aplikasi tetap terbuka -- hanya halaman yang berisi data pribadi
+      // yang menyembunyikan isinya.
+      //
+      // Dulu cabang ini menyembunyikan appShell seluruhnya, sehingga tidak ada
+      // yang bisa dijelajahi sebelum masuk. Itu membuat wajah tamu di Profil
+      // (panel "Login untuk melihat paket sesi, riwayat pemesanan, dan e-tiket
+      // kamu") tidak pernah terlihat di alur mana pun kecuali ?demo=1 --
+      // padahal kode itu sudah ditulis lengkap. Tamu bisa melihat jadwal,
+      // paket, dan cabang; memesan kelas tetap ditolak di titik pesannya dengan
+      // "Login dulu untuk memesan kelas".
+      authScreen.hidden = true;
+      appShell.hidden = false;
+      switchView(state.view);
+      applyUserToProfile({ name: 'Tamu', email: null, phone: '', since: '' });
       document.body.style.overflow = '';
       formLogin.reset();
       formOtp.reset();
@@ -1761,12 +1810,18 @@
       setAuthForm('login');
     }
 
-    // Di luar cabang if/else: kartu paket dan halaman profil sama-sama
-    // bergantung pada sesi, jadi keduanya dihitung ulang setiap kali
-    // status masuk berubah — bukan hanya saat masuk. Bar judul juga, karena
-    // init() tidak lewat switchView().
+    // Di luar cabang if/else: kartu paket, daftar riwayat, dan halaman profil
+    // semuanya bergantung pada sesi, jadi dihitung ulang setiap kali status
+    // masuk berubah — bukan hanya saat masuk. Bar judul juga, karena init()
+    // tidak lewat switchView().
+    //
+    // Ketiganya memakai isGuest(), bukan isSignedIn(), supaya mode demo
+    // menampilkan keadaan pengguna yang sudah masuk pada ketiganya sekaligus.
+    // applyProfileSessionState() parameternya kebalikan -- dia menerima
+    // "sudah masuk", bukan "tamu".
     renderPackageCard();
-    applyProfileSessionState(isSignedIn());
+    renderHistory();
+    applyProfileSessionState(!isGuest());
     appShell.classList.toggle('has-header', state.view === 'schedule');
   }
 
@@ -2112,6 +2167,13 @@
   /* ---------- Keluar ---------- */
   $('#logoutBtn').addEventListener('click', () => {
     clearSession();
+    // Mode demo memaksa tampilan "sudah masuk" lewat flag di URL. Kalau flag itu
+    // dibiarkan, tombol Keluar di pratinjau tidak mengubah apa pun: toast
+    // bilang sudah keluar, tapi kartu paket, Profil, dan Riwayat tetap berisi
+    // data. Buang flagnya supaya aplikasi benar-benar turun ke keadaan tamu.
+    if (new URLSearchParams(location.search).get('demo') === '1') {
+      history.replaceState(null, '', location.pathname);
+    }
     gate();
     toast('Anda telah keluar');
   });
