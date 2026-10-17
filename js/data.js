@@ -695,8 +695,9 @@ const BRANCH_DETAILS = [
     id: 'sunter',
     name: 'Sunter',
     area: 'Jakarta Utara',
-    address: 'Jl. MH Thamrin No. 155, Sunter, Jakarta Utara',
-    hours: '07.00 – 20.00 WIB',
+    address: 'Jl. Danau Sunter Utara No.9B Lt.3, Sunter',
+    mapsUrl: 'https://www.google.com/maps/place/The+Body+Project+Sunter/@-6.1383684,106.864813,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f54f6e8bb093:0xd7bb1dbca614cbe2!8m2!3d-6.1383684!4d106.864813',
+    hours: '07.00 - 20.00 WIB',
     phone: '+62 21 0000 0006',
     distance: '12.9 km',
     cover: 'assets/branches/sunter.jpg',
@@ -782,6 +783,32 @@ const BRANCH_DETAILS = [
       { icon: '⊞', label: '4 Reformer Beds' },
       { icon: '◫', label: '1 Private Suite' },
       { icon: '⚑', label: 'Valet Parking' }
+    ]
+  },
+  {
+    /* Cabang baru, belum ada sesinya -- sama seperti Sampoerna, kartu ini
+       menulis "Lihat Jadwal (0 Sesi)" sampai kelasnya ditambahkan.
+
+       Nama di Maps adalah "The Slow Pondok Indah" (kategori Studio Pilates,
+       29 ulasan). Nama di kartu memakai "Pondok Indah" sesuai sebutan
+       location, seperti BSD, Bintaro, dan Sampoerna yang juga dipangkas.
+
+       Alamat dipangkas dari 118 karakter di Maps. "Pd. Pinang" dipakai
+       karena itu nama kelurahan yang disebut Maps sendiri; RT/RW dan
+       kode pos dibuang. Koordinat -6.276809, 106.776604. */
+    id: 'pondokindah',
+    name: 'Pondok Indah',
+    area: 'Jakarta Selatan',
+    address: 'Jl. Gedung Hijau Raya No.1A, Pd. Pinang',
+    mapsUrl: 'https://www.google.com/maps/place/The+Slow+Pondok+Indah/@-6.276809,106.776604,17z/data=!3m1!4b1!4m6!3m5!1s0x2e69f156bc852c3d:0xb6e78b0a32ec7e77!8m2!3d-6.276809!4d106.776604',
+    hours: '07.00 - 20.00 WIB',
+    distance: '8.4 km',
+    cover: 'assets/branches/pondok-indah.jpg',
+    status: 'Aktif',
+    facilities: [
+      { icon: '⊞', label: '4 Reformer Beds' },
+      { icon: '◫', label: '1 Tower Unit' },
+      { icon: '⌂', label: 'Gedung Hijau Raya' }
     ]
   }
 ];
